@@ -1,0 +1,1 @@
+{% extends 'base.html' %}{% block content %}<h1>Categories</h1><div class="row">{% for category in categories %}<div class="col-md-3"><a class="card card-body text-decoration-none text-dark mb-3" href="{{ category.get_absolute_url }}">{{ category.name }}</a></div>{% endfor %}</div>{% endblock %}

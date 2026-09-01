@@ -1,0 +1,1 @@
+{% extends 'base.html' %}{% block content %}<h1>Wishlist</h1><div class="row">{% for product in wishlist.products.all %}{% include 'products/card.html' %}{% empty %}<p>Save products you love here.</p>{% endfor %}</div>{% endblock %}

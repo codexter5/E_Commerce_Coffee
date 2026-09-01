@@ -1,0 +1,1 @@
+{% extends 'base.html' %}{% block content %}<div class="text-center py-5"><h1>Order received!</h1><p>Your order <b>{{ order.order_number }}</b> is pending confirmation.</p><a href="{% url 'orders:history' %}" class="btn btn-dark">View orders</a></div>{% endblock %}
