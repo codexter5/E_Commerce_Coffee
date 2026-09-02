@@ -3,12 +3,13 @@ from django.utils import timezone
 
 from accounts.models import Profile
 from notifications.models import Notification
+from notifications.services import send_order_confirmation_notification, send_order_status_notification
 
 
 TRANSITIONS = {
-    "PLACED": {"ACCEPTED": "SELLER"},
-    "ACCEPTED": {"PREPARING": "SELLER"},
-    "PREPARING": {"READY_FOR_DELIVERY": "SELLER"},
+    "PLACED": {"ACCEPTED": "SELLER", "CANCELLED": "SELLER"},
+    "ACCEPTED": {"PREPARING": "SELLER", "CANCELLED": "SELLER"},
+    "PREPARING": {"READY_FOR_DELIVERY": "SELLER", "CANCELLED": "SELLER"},
     "READY_FOR_DELIVERY": {"ASSIGNED": "DELIVERY"},
     "ASSIGNED": {"PICKED_UP": "DELIVERY"},
     "PICKED_UP": {"OUT_FOR_DELIVERY": "DELIVERY"},
@@ -25,6 +26,7 @@ NOTIFICATION_DETAILS = {
     "OUT_FOR_DELIVERY": (Notification.Type.ORDER_OUT_FOR_DELIVERY, "Your order is out for delivery."),
     "DELIVERED": (Notification.Type.ORDER_DELIVERED, "Your order was marked delivered."),
     "COMPLETED": (Notification.Type.ORDER_COMPLETED, "The buyer confirmed receipt of the order."),
+    "CANCELLED": (Notification.Type.ORDER_CANCELLED, "Your order was cancelled."),
 }
 
 
@@ -80,9 +82,14 @@ def transition_order(order, actor, new_status):
     recipients.pop(actor.id, None)
     for recipient in recipients.values():
         _notify(recipient, order, notification_type, message)
+    if new_status in {"ACCEPTED", "CANCELLED"}:
+        transaction.on_commit(
+            lambda: send_order_status_notification(order, new_status, message)
+        )
     return order
 
 
 def notify_order_placed(order):
     if order.seller:
         _notify(order.seller, order, Notification.Type.ORDER_PLACED, "A new order is waiting for your review.")
+    transaction.on_commit(lambda: send_order_confirmation_notification(order))

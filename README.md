@@ -34,4 +34,24 @@ Profiles support `BUYER`, `SELLER`, and `DELIVERY` roles. An administrator assig
 
 Role-protected POST transitions are available at `/orders/<order_number>/transition/<status>/`. For example, a seller can post to `/orders/ORD-.../transition/accepted/` only for that seller's placed order. Invalid transitions, wrong roles, and delivery reassignment are rejected. Each successful transition creates database notifications for the relevant users.
 
+### Order email and WhatsApp notifications
+
+Accepted (confirmed) and cancelled orders can also notify the buyer by email, WhatsApp, or both. External delivery is disabled by default. Add these settings to `.env` to enable it:
+
+```env
+ORDER_NOTIFICATION_CHANNELS=email,whatsapp
+EMAIL_BACKEND=django.core.mail.backends.smtp.EmailBackend
+DEFAULT_FROM_EMAIL=orders@example.com
+EMAIL_HOST=smtp.example.com
+EMAIL_PORT=587
+EMAIL_HOST_USER=orders@example.com
+EMAIL_HOST_PASSWORD=your-smtp-password
+EMAIL_USE_TLS=True
+TWILIO_ACCOUNT_SID=your-account-sid
+TWILIO_AUTH_TOKEN=your-auth-token
+TWILIO_WHATSAPP_FROM=whatsapp:+14155238886
+```
+
+The WhatsApp recipient must be stored as an international phone number, such as `+977...`, and must be permitted by the configured WhatsApp sender. For a Twilio sandbox, the recipient must first join the sandbox. Provider failures are logged and do not block or roll back the order status change.
+
 Notifications can initially be polled with `GET /notifications/`; the response is limited to the authenticated user's notifications. Mark one read with `POST /notifications/<id>/read/`. Both endpoints require login, and the read endpoint also requires CSRF protection.
