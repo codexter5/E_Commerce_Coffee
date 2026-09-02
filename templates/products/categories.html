@@ -1,21 +1,32 @@
 {% extends 'base.html' %}
 
-{% block title %}Product Categories - BrewMart{% endblock %}
+{% block title %}Roast & Gear Categories - BrewMart{% endblock %}
 
 {% block content %}
-    <div class="page-intro">
-        <h1>Product Categories</h1>
-        <p class="text-muted mb-0">Browse our product catalog by category</p>
+    <div class="page-intro pb-3 border-bottom">
+        <h1>Roast & Gear Categories</h1>
+        <p class="text-muted mb-0">Browse our single origins, espresso blends, and brewing equipment by specialty category</p>
     </div>
 
-    <div class="row">
+    <div class="row g-4 mt-2">
         {% for category in categories %}
-            <div class="col-lg-3 col-md-4 col-sm-6 mb-4">
+            <div class="col-lg-3 col-md-4 col-sm-6">
                 <a href="{{ category.get_absolute_url }}" class="text-decoration-none">
-                    <div class="card h-100 category-card">
-                        <div class="card-body text-center">
+                    <div class="card h-100 category-card text-center">
+                        <div class="card-body">
+                            <div class="category-icon-wrapper">
+                                {% if 'arabica' in category.name|lower %}
+                                    <i class="bi bi-cup-hot"></i>
+                                {% elif 'robusta' in category.name|lower %}
+                                    <i class="bi bi-lightning-charge"></i>
+                                {% elif 'equipment' in category.name|lower or 'gear' in category.name|lower %}
+                                    <i class="bi bi-gear-wide-connected"></i>
+                                {% else %}
+                                    <i class="bi bi-droplet"></i>
+                                {% endif %}
+                            </div>
                             <h5 class="card-title">{{ category.name }}</h5>
-                            <p class="text-muted mb-0">View Products <i class="bi bi-arrow-right"></i></p>
+                            <span class="text-amber fw-semibold small">Explore Selection <i class="bi bi-arrow-right ms-1"></i></span>
                         </div>
                     </div>
                 </a>

@@ -3,38 +3,43 @@
 {% block title %}Order History - BrewMart{% endblock %}
 
 {% block content %}
-    <div class="page-intro">
-        <h1>Order History</h1>
-        <p class="text-muted mb-0">View your past purchases</p>
+    <div class="page-intro pb-2 mb-4 border-bottom">
+        <h1 class="mb-1">Order History</h1>
+        <p class="text-muted mb-0">Track your past purchases, roasting status, and order receipts</p>
     </div>
 
     {% if orders %}
-        <div class="row">
+        <div class="row g-4">
             {% for order in orders %}
-                <div class="col-lg-8 mb-4">
-                    <div class="card">
-                        <div class="card-body">
-                            <div class="row align-items-start">
-                                <div class="col-md-8">
-                                    <h5 class="card-title mb-2">Order #{{ order.order_number }}</h5>
-                                    <p class="text-muted mb-0">
-                                        <i class="bi bi-calendar3"></i> {{ order.created_at|date:"M d, Y" }}
+                <div class="col-lg-8">
+                    <div class="card shadow-sm">
+                        <div class="card-body p-4">
+                            <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-3">
+                                <div>
+                                    <h5 class="fw-bold mb-1 text-dark">
+                                        <i class="bi bi-box-seam text-amber me-2"></i>Order #{{ order.order_number }}
+                                    </h5>
+                                    <p class="text-muted small mb-0">
+                                        <i class="bi bi-calendar3 me-1"></i> Placed on {{ order.created_at|date:"M d, Y" }} at {{ order.created_at|date:"H:i" }}
                                     </p>
                                 </div>
-                                <div class="col-md-4 text-md-end mt-2 mt-md-0">
+                                <div>
                                     {% if order.get_status_display == "Completed" %}
-                                        <span class="badge badge-success">{{ order.get_status_display }}</span>
+                                        <span class="badge badge-success"><i class="bi bi-check-circle me-1"></i>{{ order.get_status_display }}</span>
                                     {% elif order.get_status_display == "Pending" %}
-                                        <span class="badge badge-warning">{{ order.get_status_display }}</span>
+                                        <span class="badge badge-warning"><i class="bi bi-hourglass-split me-1"></i>{{ order.get_status_display }}</span>
                                     {% else %}
                                         <span class="badge badge-muted">{{ order.get_status_display }}</span>
                                     {% endif %}
                                 </div>
                             </div>
-                            <hr>
+                            <hr class="my-3">
                             <div class="d-flex justify-content-between align-items-center">
-                                <span>Total Amount</span>
-                                <h5 class="card-price mb-0">Rs. {{ order.total_amount }}</h5>
+                                <span class="text-muted small text-uppercase fw-bold">Total Paid</span>
+                                <div class="d-flex align-items-baseline">
+                                    <span class="card-price-currency fs-5">Rs.</span>
+                                    <span class="card-price fs-3">{{ order.total_amount }}</span>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -43,6 +48,6 @@
         </div>
     {% else %}
         {% url 'products:list' as shop_url %}
-        {% include 'partials/empty_state.html' with icon='bi-receipt' title='No orders yet' message="You haven't placed any orders. Start shopping to see your history here." button_url=shop_url button_text='Browse Products' %}
+        {% include 'partials/empty_state.html' with icon='bi-receipt' title='No orders yet' message="You haven't placed any orders yet. Discover our fresh roasted beans to place your first order." button_url=shop_url button_text='Discover Fresh Roasts' %}
     {% endif %}
 {% endblock %}

@@ -1,31 +1,38 @@
 {% extends 'base.html' %}
 
 {% block content %}
-    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3">
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3 pb-3 border-bottom">
         <div class="page-intro mb-0">
-            <h1 class="mb-1">Products</h1>
-            <p class="text-muted mb-0">Browse our complete inventory{% if request.GET.q %} for "{{ request.GET.q }}"{% endif %}</p>
+            <h1 class="mb-1">Roast & Gear Catalog</h1>
+            <p class="text-muted mb-0">
+                {% if request.GET.q %}
+                    Showing search results for <span class="badge badge-warning">"{{ request.GET.q }}"</span>
+                    <a href="{% url 'products:list' %}" class="btn-link ms-2 small">Clear search</a>
+                {% else %}
+                    Explore our complete curated inventory of specialty beans and equipment
+                {% endif %}
+            </p>
         </div>
         <form method="get" class="d-flex gap-2 align-items-center">
             {% if request.GET.q %}
                 <input type="hidden" name="q" value="{{ request.GET.q }}">
             {% endif %}
-            <label for="sort" class="form-label mb-0 me-2 text-nowrap">Sort by</label>
-            <select id="sort" name="sort" onchange="this.form.submit()" class="form-select" style="width: auto;">
-                <option value="newest" {% if request.GET.sort == 'newest' or not request.GET.sort %}selected{% endif %}>Newest</option>
-                <option value="price_asc" {% if request.GET.sort == 'price_asc' %}selected{% endif %}>Price: Low to High</option>
-                <option value="price_desc" {% if request.GET.sort == 'price_desc' %}selected{% endif %}>Price: High to Low</option>
+            <label for="sort" class="form-label mb-0 me-2 text-nowrap text-muted small fw-bold text-uppercase"><i class="bi bi-filter me-1"></i> Sort by</label>
+            <select id="sort" name="sort" onchange="this.form.submit()" class="form-select form-select-sm shadow-xs" style="width: auto; min-width: 170px;">
+                <option value="newest" {% if request.GET.sort == 'newest' or not request.GET.sort %}selected{% endif %}>✨ Newest Arrivals</option>
+                <option value="price_asc" {% if request.GET.sort == 'price_asc' %}selected{% endif %}>▲ Price: Low to High</option>
+                <option value="price_desc" {% if request.GET.sort == 'price_desc' %}selected{% endif %}>▼ Price: High to Low</option>
             </select>
         </form>
     </div>
 
-    <div class="row">
+    <div class="row g-4">
         {% for product in products %}
             {% include 'products/card.html' %}
         {% empty %}
             <div class="col-12">
                 {% url 'products:list' as shop_url %}
-                {% include 'partials/empty_state.html' with icon='bi-search' title='No products found' message='Try adjusting your search or browse our full catalog.' button_url=shop_url button_text='View All Products' %}
+                {% include 'partials/empty_state.html' with icon='bi-search' title='No coffees found matching criteria' message='Try adjusting your search keywords or browse our complete roast catalog.' button_url=shop_url button_text='View All Products' %}
             </div>
         {% endfor %}
     </div>

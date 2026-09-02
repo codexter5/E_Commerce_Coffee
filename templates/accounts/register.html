@@ -1,28 +1,34 @@
 {% extends 'base.html' %}
 
-{% block title %}Register - BrewMart{% endblock %}
+{% block title %}Create Account - BrewMart{% endblock %}
 
 {% block content %}
-    <div class="row justify-content-center">
-        <div class="col-md-6">
-            <div class="card">
-                <div class="card-header bg-light">
-                    <h3 class="mb-0">Create Your Account</h3>
+    <div class="row justify-content-center py-3">
+        <div class="col-md-7 col-lg-6">
+            <div class="card auth-card" style="max-width: 520px;">
+                <div class="card-header">
+                    <div class="brand-logo-icon mx-auto mb-2"><i class="bi bi-person-plus-fill"></i></div>
+                    <h3 class="mb-1">Join BrewMart</h3>
+                    <p class="text-white-50 small mb-0">Create an account for fresh roasts, wallet credits, and order tracking</p>
                 </div>
                 <div class="card-body">
-                    <p class="text-muted mb-4">Join BrewMart to start shopping premium coffee products.</p>
                     <form method="post">
                         {% csrf_token %}
                         {% include 'partials/form_fields.html' with form=form %}
-                        <div class="d-grid mb-3">
-                            <button type="submit" class="btn btn-dark btn-lg">Create Account</button>
+                        <div class="d-grid mt-4 mb-3">
+                            <button type="submit" class="btn btn-dark btn-lg">
+                                <i class="bi bi-check-circle-fill me-1"></i> Create My Account
+                            </button>
                         </div>
                     </form>
 
-                    <hr>
+                    <hr class="my-4">
 
-                    <div class="text-center">
-                        <p class="mb-0">Already have an account? <a href="{% url 'login' %}" class="fw-bold">Login here</a></p>
+                    <div class="text-center small">
+                        <p class="mb-0 text-secondary">
+                            Already have an account?
+                            <a href="{% url 'login' %}" class="fw-bold text-amber ms-1">Log in here</a>
+                        </p>
                     </div>
                 </div>
             </div>

@@ -1,42 +1,47 @@
 {% extends 'base.html' %}
 
-{% block title %}Payment - BrewMart{% endblock %}
+{% block title %}Payment Gateway - BrewMart{% endblock %}
 
 {% block content %}
     {% if paid %}
         {% include 'partials/checkout_steps.html' with active_step='confirmation' %}
         <div class="text-center py-5">
             <div class="success-icon"><i class="bi bi-check-lg"></i></div>
-            <h1>Payment Successful</h1>
-            <p class="text-muted mb-3">{{ result.message }}</p>
-            <div class="card mb-4 mx-auto" style="max-width: 500px;">
-                <div class="card-body">
-                    <p class="text-muted mb-1">Transaction Reference</p>
-                    <h5 class="mb-0 font-monospace">{{ result.reference }}</h5>
+            <h1 class="mb-2">Payment Authorized</h1>
+            <p class="text-muted mb-4">{{ result.message }}</p>
+            <div class="card mb-4 mx-auto shadow-sm" style="max-width: 480px;">
+                <div class="card-body p-4">
+                    <p class="text-muted small text-uppercase mb-1">Transaction Reference</p>
+                    <h5 class="mb-0 font-monospace text-dark fw-bold">{{ result.reference }}</h5>
                 </div>
             </div>
-            <a class="btn btn-dark btn-lg" href="{% url 'orders:success' order.order_number %}">View Order Details</a>
+            <a class="btn btn-dark btn-lg" href="{% url 'orders:success' order.order_number %}">
+                View Order Confirmation <i class="bi bi-arrow-right ms-1"></i>
+            </a>
         </div>
     {% else %}
         {% include 'partials/checkout_steps.html' with active_step='payment' %}
 
-        <div class="page-intro">
-            <h1>{{ gateway_name }}</h1>
-            <p class="text-muted mb-0">Complete your secure payment</p>
+        <div class="page-intro pb-2 mb-4 border-bottom">
+            <h1 class="mb-1">{{ gateway_name }}</h1>
+            <p class="text-muted mb-0">Complete your encrypted payment of <strong class="text-dark">Rs. {{ total }}</strong></p>
         </div>
 
-        <div class="row">
+        <div class="row g-4 align-items-start">
             <div class="col-lg-7">
-                <div class="card">
-                    <div class="card-header bg-light">
-                        <h5 class="mb-0">Payment Details</h5>
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header bg-card-subtle py-3 d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0"><i class="bi bi-credit-card-2-front-fill text-amber me-2"></i>Enter Card Details</h5>
+                        <span class="badge badge-success"><i class="bi bi-lock-fill me-1"></i>SSL Encrypted</span>
                     </div>
-                    <div class="card-body">
+                    <div class="card-body p-4">
                         <form method="post">
                             {% csrf_token %}
                             {% include 'partials/form_fields.html' with form=form %}
-                            <div class="d-grid">
-                                <button type="submit" class="btn btn-dark btn-lg">Pay Rs. {{ total }}</button>
+                            <div class="d-grid mt-4">
+                                <button type="submit" class="btn btn-dark btn-lg">
+                                    <i class="bi bi-shield-check me-1"></i> Authorize & Pay Rs. {{ total }}
+                                </button>
                             </div>
                         </form>
                     </div>
@@ -44,18 +49,37 @@
             </div>
 
             <div class="col-lg-5">
-                <div class="card demo-card mb-4">
-                    <div class="card-body">
-                        <h6 class="mb-3"><i class="bi bi-info-circle"></i> Demo Payment Information</h6>
-                        <p class="small mb-2"><strong>Use this demo card to test:</strong></p>
-                        <div class="bg-light p-3 rounded mb-3">
-                            <p class="mb-1 font-monospace"><strong>Card Number:</strong> 4111 1111 1111 1111</p>
-                            <p class="mb-1 font-monospace"><strong>Expiry:</strong> 12/30</p>
-                            <p class="mb-0 font-monospace"><strong>CVV:</strong> 123</p>
+                <div class="demo-card shadow-md mb-4">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <span class="small text-uppercase fw-bold text-warning letter-spacing-1">BrewMart Test Card</span>
+                        <i class="bi bi-wifi fs-4 text-warning"></i>
+                    </div>
+                    <div class="demo-card-chip"></div>
+                    <div class="mb-3">
+                        <div class="small text-muted mb-1" style="font-size: 0.72rem;">CARD NUMBER</div>
+                        <div class="font-monospace fs-5 text-white fw-bold">4111 &bull;&bull;&bull;&bull; &bull;&bull;&bull;&bull; 1111</div>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <div class="small text-muted" style="font-size: 0.68rem;">EXPIRY</div>
+                            <div class="font-monospace text-white fw-bold">12/30</div>
                         </div>
-                        <small class="text-muted">
-                            This is a demo payment gateway. No real transaction will be processed.
-                        </small>
+                        <div>
+                            <div class="small text-muted" style="font-size: 0.68rem;">CVV</div>
+                            <div class="font-monospace text-white fw-bold">123</div>
+                        </div>
+                        <div class="text-end">
+                            <i class="bi bi-credit-card fs-2 text-warning"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card p-3 bg-light border text-muted small">
+                    <div class="d-flex gap-2">
+                        <i class="bi bi-info-circle-fill text-amber fs-5 flex-shrink-0"></i>
+                        <div>
+                            <strong>Demo Environment:</strong> You can test with the credentials shown on the card above. No real funds will be deducted from your bank.
+                        </div>
                     </div>
                 </div>
             </div>

@@ -1,52 +1,71 @@
 <div class="col-lg-3 col-md-4 col-sm-6 mb-4">
-    <div class="card">
-        {% if product.image %}
-            <a href="{{ product.get_absolute_url }}">
-                <img class="card-img-top product-card-image" src="{{ product.image.url }}" alt="{{ product.name }}">
-            </a>
-        {% else %}
-            <a href="{{ product.get_absolute_url }}" class="text-decoration-none">
-                <div class="card-img-top bg-light d-flex align-items-center justify-content-center product-card-image">
-                    <span class="text-muted"><i class="bi bi-image"></i> No image</span>
-                </div>
-            </a>
-        {% endif %}
-        <div class="card-body">
-            <span class="card-category">{{ product.category }}</span>
-            <h5 class="card-title">
-                <a href="{{ product.get_absolute_url }}">{{ product.name }}</a>
-            </h5>
-            {% if product.brand %}
-                <p class="text-muted small mb-2">{{ product.brand }}</p>
-            {% endif %}
-            <div class="d-flex justify-content-between align-items-center mt-auto">
-                <span class="card-price mb-0">Rs. {{ product.current_price }}</span>
+    <div class="product-card">
+        <div class="product-card-image-wrapper">
+            <!-- Stock Status Badge Overlay -->
+            <div class="product-badge-overlay">
                 {% if product.stock_quantity %}
                     <span class="badge badge-success">In Stock</span>
                 {% else %}
                     <span class="badge badge-muted">Out of Stock</span>
                 {% endif %}
             </div>
-        </div>
-        <div class="card-footer">
-            <div class="product-card-actions">
-                <form method="post" action="{% url 'cart:add' product.id %}" class="flex-grow-1">
-                    {% csrf_token %}
-                    <input type="hidden" name="next" value="{{ request.path }}">
-                    <button type="submit" class="btn btn-dark w-100" {% if not product.stock_quantity %}disabled{% endif %}>
-                        {% if product.stock_quantity %}<i class="bi bi-cart-plus"></i> Add to Cart{% else %}Out of Stock{% endif %}
-                    </button>
-                </form>
-                {% if user.is_authenticated %}
+
+            <!-- Wishlist Heart Overlay -->
+            {% if user.is_authenticated %}
+                <div class="product-wishlist-overlay">
                     <form method="post" action="{% url 'wishlist:toggle' product.id %}">
                         {% csrf_token %}
                         <input type="hidden" name="next" value="{{ request.path }}">
-                        <button type="submit" class="btn btn-outline-dark btn-wishlist{% if product.pk in wishlist_product_ids %} active{% endif %}" title="{% if product.pk in wishlist_product_ids %}Remove from wishlist{% else %}Save to wishlist{% endif %}" aria-label="Toggle wishlist">
+                        <button type="submit" class="btn-wishlist-circle{% if product.pk in wishlist_product_ids %} active{% endif %}" title="{% if product.pk in wishlist_product_ids %}Remove from saved{% else %}Save to wishlist{% endif %}" aria-label="Toggle wishlist">
                             <i class="bi bi-heart{% if product.pk in wishlist_product_ids %}-fill{% endif %}"></i>
                         </button>
                     </form>
+                </div>
+            {% endif %}
+
+            <!-- Product Image -->
+            <a href="{{ product.get_absolute_url }}" class="w-100 h-100 d-flex align-items-center justify-content-center text-decoration-none">
+                {% if product.image %}
+                    <img class="product-card-image" src="{{ product.image.url }}" alt="{{ product.name }}" loading="lazy">
+                {% else %}
+                    <div class="product-image-fallback">
+                        <i class="bi bi-cup-hot"></i>
+                        <span>No photo</span>
+                    </div>
                 {% endif %}
+            </a>
+        </div>
+
+        <div class="card-body">
+            <span class="card-category-tag">{{ product.category }}</span>
+            <h5 class="card-title">
+                <a href="{{ product.get_absolute_url }}">{{ product.name }}</a>
+            </h5>
+            {% if product.brand %}
+                <div class="card-brand-label">{{ product.brand }}</div>
+            {% endif %}
+
+            <div class="card-price-row">
+                <div>
+                    <span class="card-price-currency">Rs.</span>
+                    <span class="card-price">{{ product.current_price }}</span>
+                </div>
+                <small class="text-muted">{% if product.stock_quantity %}{{ product.stock_quantity }} left{% endif %}</small>
             </div>
+        </div>
+
+        <div class="card-footer">
+            <form method="post" action="{% url 'cart:add' product.id %}">
+                {% csrf_token %}
+                <input type="hidden" name="next" value="{{ request.path }}">
+                <button type="submit" class="btn btn-dark w-100 btn-sm" {% if not product.stock_quantity %}disabled{% endif %}>
+                    {% if product.stock_quantity %}
+                        <i class="bi bi-bag-plus"></i> Add to Cart
+                    {% else %}
+                        Out of Stock
+                    {% endif %}
+                </button>
+            </form>
         </div>
     </div>
 </div>
