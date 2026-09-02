@@ -929,6 +929,63 @@ p {
   margin-bottom: 0.5rem;
 }
 
+.category-card-image-wrapper {
+  position: relative;
+  width: 100%;
+  height: 200px;
+  overflow: hidden;
+  background: var(--espresso-950);
+  border-radius: var(--radius-lg);
+}
+
+.category-card-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  opacity: 0.88;
+  transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease;
+  display: block;
+}
+
+.category-card:hover .category-card-image {
+  transform: scale(1.08);
+  opacity: 0.98;
+}
+
+.category-card-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(16, 10, 6, 0.1) 0%, rgba(16, 10, 6, 0.78) 100%);
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 1.35rem 1.25rem;
+  z-index: 2;
+}
+
+.category-card-title {
+  font-family: var(--font-heading);
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: #ffffff !important;
+  letter-spacing: -0.01em;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.7);
+}
+
+.category-card-link {
+  color: var(--amber-300);
+  font-weight: 600;
+  font-size: 0.84rem;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
+  transition: var(--transition-fast);
+}
+
+.category-card:hover .category-card-link {
+  color: #ffffff;
+  padding-left: 3px;
+}
+
 /* --------------------------------------------------------------------------
    6. Buttons & Interactive Controls
    -------------------------------------------------------------------------- */

@@ -11,14 +11,14 @@ Use `/admin/` to add categories and products. Production uses environment variab
 
 ## Payment demonstration
 
-Checkout uses a local Khalti-style gateway simulator so the complete online card flow can be demonstrated without contacting a payment network:
+Checkout uses a local Khalti-style gateway simulator so the complete online card flow can be demonstrated without contacting a payment network. In production, `SecurityMiddleware` redirects HTTP to HTTPS when `DEBUG=False`, secure cookies prevent session and CSRF cookies from crossing plain HTTP, and `SECURE_PROXY_SSL_HEADER` supports a trusted TLS-terminating reverse proxy.
 
 1. Sign in, add a product to the cart, and open checkout.
 2. Submit the delivery details to open the payment page.
 3. Use card number `4111 1111 1111 1111`, expiry `12/30`, and CVV `123`.
 4. The approved response displays a demo transaction reference and then links to the order.
 
-Any other card details produce a declined response while leaving the cart unchanged. Card number and CVV are used only during the request and are never stored. For production, replace `orders/payment_gateway.py` with Khalti/eSewa API calls and verify the server-side callback before creating the order or changing its status.
+Any other card details produce a declined response while leaving the cart unchanged. Card number and CVV are used only during the request and are never stored. After approval, the server creates a canonical transaction payload, displays its SHA-256 hash, and stores an HMAC-SHA256 signature made with `SECRET_KEY`. The reusable verifier is `orders.security.verify_transaction_signature`; a production gateway must additionally verify the provider's own server-side callback or signature before creating the order or changing its status. HMAC is a symmetric application signature for this demonstration, not a replacement for a provider's asymmetric digital-signature scheme.
 
 ## Digital wallet demonstration
 

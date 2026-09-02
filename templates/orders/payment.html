@@ -13,6 +13,9 @@
                 <div class="card-body p-4">
                     <p class="text-muted small text-uppercase mb-1">Transaction Reference</p>
                     <h5 class="mb-0 font-monospace text-dark fw-bold">{{ result.reference }}</h5>
+                        <p class="text-muted small text-uppercase mt-3 mb-1">SHA-256 transaction hash</p>
+                        <p class="mb-0 font-monospace small text-break">{{ order.transaction_hash }}</p>
+                        <p class="text-muted small mt-3 mb-0">The transaction payload is hashed and signed server-side before the order is finalized.</p>
                 </div>
             </div>
             <a class="btn btn-dark btn-lg" href="{% url 'orders:success' order.order_number %}">

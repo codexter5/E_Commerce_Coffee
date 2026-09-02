@@ -6,9 +6,10 @@ from cart.services import get_cart
 from .forms import CardPaymentForm, CheckoutForm
 from .models import Order, OrderItem
 from .payment_gateway import DummyKhaltiGateway
+from .security import transaction_hash, transaction_signature
 
 
-def _create_order(user, form, items, cart):
+def _create_order(user, form, items, cart, payment_reference):
     with transaction.atomic():
         for item in items:
             if item.quantity > item.product.stock_quantity:
@@ -27,6 +28,10 @@ def _create_order(user, form, items, cart):
             )
             item.product.stock_quantity -= item.quantity
             item.product.save(update_fields=["stock_quantity"])
+        order.payment_reference = payment_reference
+        order.transaction_hash = transaction_hash(order, payment_reference)
+        order.transaction_signature = transaction_signature(order, payment_reference)
+        order.save(update_fields=["payment_reference", "transaction_hash", "transaction_signature"])
         cart.items.all().delete()
     return order
 
@@ -57,7 +62,7 @@ def payment(request):
         result = DummyKhaltiGateway().charge(total, form.cleaned_data["card_number"], form.cleaned_data["expiry"], form.cleaned_data["cvv"])
         if result.successful:
             order_form = CheckoutForm(data=checkout_data)
-            order = _create_order(request.user, order_form, items, cart)
+            order = _create_order(request.user, order_form, items, cart, result.reference)
             if order:
                 request.session.pop("checkout_data", None)
                 return render(request, "orders/payment.html", {"paid": True, "order": order, "result": result})

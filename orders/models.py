@@ -9,6 +9,9 @@ class Order(models.Model):
     full_name = models.CharField(max_length=160); email = models.EmailField(); phone = models.CharField(max_length=30)
     shipping_address = models.TextField(); city = models.CharField(max_length=80); postal_code = models.CharField(max_length=20)
     total_amount = models.DecimalField(max_digits=12, decimal_places=2); status = models.CharField(max_length=20, choices=Status.choices, default=Status.PENDING)
+    payment_reference = models.CharField(max_length=80, blank=True)
+    transaction_hash = models.CharField(max_length=64, blank=True)
+    transaction_signature = models.CharField(max_length=64, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     def save(self, *args, **kwargs):
         if not self.order_number: self.order_number = f"ORD-{uuid.uuid4().hex[:10].upper()}"

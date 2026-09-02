@@ -12,22 +12,32 @@
         {% for category in categories %}
             <div class="col-lg-3 col-md-4 col-sm-6">
                 <a href="{{ category.get_absolute_url }}" class="text-decoration-none">
-                    <div class="card h-100 category-card text-center">
-                        <div class="card-body">
-                            <div class="category-icon-wrapper">
-                                {% if 'arabica' in category.name|lower %}
-                                    <i class="bi bi-cup-hot"></i>
-                                {% elif 'robusta' in category.name|lower %}
-                                    <i class="bi bi-lightning-charge"></i>
-                                {% elif 'equipment' in category.name|lower or 'gear' in category.name|lower %}
-                                    <i class="bi bi-gear-wide-connected"></i>
-                                {% else %}
-                                    <i class="bi bi-droplet"></i>
-                                {% endif %}
+                    <div class="card h-100 category-card">
+                        {% if category.image %}
+                            <div class="category-card-image-wrapper">
+                                <img src="{{ category.image.url }}" alt="{{ category.name }}" class="category-card-image" loading="lazy">
+                                <div class="category-card-overlay">
+                                    <h5 class="category-card-title text-white mb-1">{{ category.name }}</h5>
+                                    <span class="category-card-link small">Explore Roasts <i class="bi bi-arrow-right ms-1"></i></span>
+                                </div>
                             </div>
-                            <h5 class="card-title">{{ category.name }}</h5>
-                            <span class="text-amber fw-semibold small">Explore Selection <i class="bi bi-arrow-right ms-1"></i></span>
-                        </div>
+                        {% else %}
+                            <div class="card-body text-center p-4">
+                                <div class="category-icon-wrapper">
+                                    {% if 'arabica' in category.name|lower %}
+                                        <i class="bi bi-cup-hot"></i>
+                                    {% elif 'robusta' in category.name|lower %}
+                                        <i class="bi bi-lightning-charge"></i>
+                                    {% elif 'equipment' in category.name|lower or 'gear' in category.name|lower %}
+                                        <i class="bi bi-gear-wide-connected"></i>
+                                    {% else %}
+                                        <i class="bi bi-droplet"></i>
+                                    {% endif %}
+                                </div>
+                                <h5 class="card-title">{{ category.name }}</h5>
+                                <span class="text-amber fw-semibold small">Explore Selection <i class="bi bi-arrow-right ms-1"></i></span>
+                            </div>
+                        {% endif %}
                     </div>
                 </a>
             </div>
