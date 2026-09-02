@@ -701,9 +701,9 @@ p {
 .product-card-image-wrapper {
   position: relative;
   width: 100%;
-  aspect-ratio: 4 / 3;
-  min-height: 180px;
-  max-height: 260px;
+  aspect-ratio: 3 / 4;
+  min-height: 240px;
+  max-height: 300px;
   background: linear-gradient(145deg, #f7f1e9 0%, #ebe0d2 100%);
   overflow: hidden;
   display: flex;
@@ -1966,8 +1966,8 @@ textarea.form-control:focus {
   }
 
   .product-card-image-wrapper {
-    min-height: 160px;
-    max-height: 220px;
+    min-height: 220px;
+    max-height: 280px;
   }
 
   .checkout-step-label {
