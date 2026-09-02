@@ -1,37 +1,52 @@
 <div class="col-lg-3 col-md-4 col-sm-6 mb-4">
     <div class="card">
         {% if product.image %}
-            <img class="card-img-top" src="{{ product.image.url }}" alt="{{ product.name }}">
+            <a href="{{ product.get_absolute_url }}">
+                <img class="card-img-top product-card-image" src="{{ product.image.url }}" alt="{{ product.name }}">
+            </a>
         {% else %}
-            <div class="card-img-top bg-light d-flex align-items-center justify-content-center" style="height: 200px;">
-                <span class="text-muted">No image</span>
-            </div>
+            <a href="{{ product.get_absolute_url }}" class="text-decoration-none">
+                <div class="card-img-top bg-light d-flex align-items-center justify-content-center product-card-image">
+                    <span class="text-muted"><i class="bi bi-image"></i> No image</span>
+                </div>
+            </a>
         {% endif %}
         <div class="card-body">
             <span class="card-category">{{ product.category }}</span>
             <h5 class="card-title">
                 <a href="{{ product.get_absolute_url }}">{{ product.name }}</a>
             </h5>
-            <p class="card-text text-muted" style="font-size: 0.9rem; margin-bottom: 1rem;">
-                {% if product.brand %}{{ product.brand }}{% endif %}
-            </p>
-            <div class="d-flex justify-content-between align-items-center">
-                <span class="card-price">Rs. {{ product.current_price }}</span>
+            {% if product.brand %}
+                <p class="text-muted small mb-2">{{ product.brand }}</p>
+            {% endif %}
+            <div class="d-flex justify-content-between align-items-center mt-auto">
+                <span class="card-price mb-0">Rs. {{ product.current_price }}</span>
                 {% if product.stock_quantity %}
                     <span class="badge badge-success">In Stock</span>
                 {% else %}
-                    <span class="badge" style="background: #ecf0f1; color: #7f8c8d;">Out of Stock</span>
+                    <span class="badge badge-muted">Out of Stock</span>
                 {% endif %}
             </div>
         </div>
         <div class="card-footer">
-            <form method="post" action="{% url 'cart:add' product.id %}" class="w-100">
-                {% csrf_token %}
-                <input type="hidden" name="next" value="{{ request.path }}">
-                <button type="submit" class="btn btn-dark w-100" {% if not product.stock_quantity %}disabled{% endif %}>
-                    {% if product.stock_quantity %}Add to Cart{% else %}Out of Stock{% endif %}
-                </button>
-            </form>
+            <div class="product-card-actions">
+                <form method="post" action="{% url 'cart:add' product.id %}" class="flex-grow-1">
+                    {% csrf_token %}
+                    <input type="hidden" name="next" value="{{ request.path }}">
+                    <button type="submit" class="btn btn-dark w-100" {% if not product.stock_quantity %}disabled{% endif %}>
+                        {% if product.stock_quantity %}<i class="bi bi-cart-plus"></i> Add to Cart{% else %}Out of Stock{% endif %}
+                    </button>
+                </form>
+                {% if user.is_authenticated %}
+                    <form method="post" action="{% url 'wishlist:toggle' product.id %}">
+                        {% csrf_token %}
+                        <input type="hidden" name="next" value="{{ request.path }}">
+                        <button type="submit" class="btn btn-outline-dark btn-wishlist{% if product.pk in wishlist_product_ids %} active{% endif %}" title="{% if product.pk in wishlist_product_ids %}Remove from wishlist{% else %}Save to wishlist{% endif %}" aria-label="Toggle wishlist">
+                            <i class="bi bi-heart{% if product.pk in wishlist_product_ids %}-fill{% endif %}"></i>
+                        </button>
+                    </form>
+                {% endif %}
+            </div>
         </div>
     </div>
 </div>

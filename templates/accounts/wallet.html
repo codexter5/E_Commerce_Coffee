@@ -3,11 +3,12 @@
 {% block title %}Digital Wallet - BrewMart{% endblock %}
 
 {% block content %}
-    <h1>Digital Wallet</h1>
-    <p class="text-muted mb-4">Manage your account wallet and transfers</p>
+    <div class="page-intro">
+        <h1>Digital Wallet</h1>
+        <p class="text-muted mb-0">Manage your account wallet and peer-to-peer transfers</p>
+    </div>
 
-    <!-- Balance Card -->
-    <div class="card mb-5" style="border-left: 4px solid var(--accent-primary);">
+    <div class="card mb-5 wallet-balance-card">
         <div class="card-body">
             <p class="text-muted mb-1">Current Balance</p>
             <h2 class="card-price mb-0">Rs. {{ wallet.balance }}</h2>
@@ -15,7 +16,6 @@
     </div>
 
     <div class="row">
-        <!-- Transfer Form -->
         <div class="col-lg-7">
             <div class="card">
                 <div class="card-header bg-light">
@@ -24,7 +24,7 @@
                 <div class="card-body">
                     <form method="post">
                         {% csrf_token %}
-                        {{ form.as_p }}
+                        {% include 'partials/form_fields.html' with form=form %}
                         <div class="d-grid">
                             <button type="submit" class="btn btn-dark btn-lg">Transfer</button>
                         </div>
@@ -33,7 +33,6 @@
             </div>
         </div>
 
-        <!-- Recent Transfers -->
         <div class="col-lg-5">
             <div class="card">
                 <div class="card-header bg-light">
@@ -41,30 +40,26 @@
                 </div>
                 <div class="card-body">
                     {% if transfers %}
-                        <div class="space-y-3">
-                            {% for transfer in transfers %}
-                                <div class="border-bottom pb-3 mb-3">
-                                    <div class="d-flex justify-content-between align-items-start">
-                                        <div>
-                                            <p class="mb-1">
-                                                {% if transfer.sender_id == user.id %}
-                                                    <strong>Sent to {{ transfer.recipient.username }}</strong>
-                                                {% else %}
-                                                    <strong>Received from {{ transfer.sender.username }}</strong>
-                                                {% endif %}
-                                            </p>
-                                            <small class="text-muted">{{ transfer.created_at|date:"M d, Y H:i" }}</small>
-                                        </div>
-                                        <span class="card-price" style="font-size: 1.2rem;">Rs. {{ transfer.amount }}</span>
+                        {% for transfer in transfers %}
+                            <div class="border-bottom pb-3 mb-3">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div>
+                                        <p class="mb-1">
+                                            {% if transfer.sender_id == user.id %}
+                                                <strong>Sent to {{ transfer.recipient.username }}</strong>
+                                            {% else %}
+                                                <strong>Received from {{ transfer.sender.username }}</strong>
+                                            {% endif %}
+                                        </p>
+                                        <small class="text-muted">{{ transfer.created_at|date:"M d, Y H:i" }}</small>
                                     </div>
-                                    <small class="text-muted d-block mt-2">Ref: {{ transfer.reference }}</small>
+                                    <span class="card-price" style="font-size: 1.2rem;">Rs. {{ transfer.amount }}</span>
                                 </div>
-                            {% endfor %}
-                        </div>
+                                <small class="text-muted d-block mt-2">Ref: {{ transfer.reference }}</small>
+                            </div>
+                        {% endfor %}
                     {% else %}
-                        <div class="text-center text-muted py-4">
-                            <p class="mb-0">No transactions yet</p>
-                        </div>
+                        {% include 'partials/empty_state.html' with icon='bi-arrow-left-right' title='No transactions yet' message='Transfer history will appear here after your first transaction.' %}
                     {% endif %}
                 </div>
             </div>

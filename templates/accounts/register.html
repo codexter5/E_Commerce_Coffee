@@ -10,10 +10,10 @@
                     <h3 class="mb-0">Create Your Account</h3>
                 </div>
                 <div class="card-body">
-                    <p class="text-muted mb-4">Join BrewMart to start shopping premium coffee products</p>
+                    <p class="text-muted mb-4">Join BrewMart to start shopping premium coffee products.</p>
                     <form method="post">
                         {% csrf_token %}
-                        {{ form.as_p }}
+                        {% include 'partials/form_fields.html' with form=form %}
                         <div class="d-grid mb-3">
                             <button type="submit" class="btn btn-dark btn-lg">Create Account</button>
                         </div>
@@ -22,7 +22,7 @@
                     <hr>
 
                     <div class="text-center">
-                        <p class="mb-0">Already have an account? <a href="{% url 'login' %}" class="text-decoration-none fw-bold">Login here</a></p>
+                        <p class="mb-0">Already have an account? <a href="{% url 'login' %}" class="fw-bold">Login here</a></p>
                     </div>
                 </div>
             </div>

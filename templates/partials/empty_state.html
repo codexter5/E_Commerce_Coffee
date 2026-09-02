@@ -1,0 +1,10 @@
+<div class="empty-state text-center py-5">
+    <div class="empty-state-icon mb-3">
+        <i class="bi {{ icon|default:'bi-inbox' }}" aria-hidden="true"></i>
+    </div>
+    <h5>{{ title }}</h5>
+    {% if message %}<p class="text-muted mb-4">{{ message }}</p>{% endif %}
+    {% if button_url and button_text %}
+        <a href="{{ button_url }}" class="btn btn-dark">{{ button_text }}</a>
+    {% endif %}
+</div>

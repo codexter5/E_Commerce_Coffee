@@ -5,14 +5,15 @@
 {% block content %}
     <div class="row justify-content-center">
         <div class="col-md-5">
-            <div class="card">
+            <div class="card auth-card">
                 <div class="card-header bg-light">
                     <h3 class="mb-0">Welcome Back</h3>
                 </div>
                 <div class="card-body">
+                    <p class="text-muted mb-4">Sign in to access your account, orders, and wallet.</p>
                     <form method="post">
                         {% csrf_token %}
-                        {{ form.as_p }}
+                        {% include 'partials/form_fields.html' with form=form %}
                         <div class="d-grid mb-3">
                             <button type="submit" class="btn btn-dark btn-lg">Login</button>
                         </div>
@@ -22,11 +23,11 @@
 
                     <div class="text-center">
                         <p class="mb-2">
-                            <a href="{% url 'password_reset' %}" class="text-decoration-none">Forgot your password?</a>
+                            <a href="{% url 'password_reset' %}">Forgot your password?</a>
                         </p>
                         <p class="mb-0">
-                            Don't have an account? 
-                            <a href="{% url 'accounts:register' %}" class="text-decoration-none fw-bold">Sign up here</a>
+                            Don't have an account?
+                            <a href="{% url 'accounts:register' %}" class="fw-bold">Sign up here</a>
                         </p>
                     </div>
                 </div>

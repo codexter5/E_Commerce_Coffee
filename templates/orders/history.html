@@ -3,8 +3,10 @@
 {% block title %}Order History - BrewMart{% endblock %}
 
 {% block content %}
-    <h1>Order History</h1>
-    <p class="text-muted mb-4">View your purchase history</p>
+    <div class="page-intro">
+        <h1>Order History</h1>
+        <p class="text-muted mb-0">View your past purchases</p>
+    </div>
 
     {% if orders %}
         <div class="row">
@@ -12,20 +14,20 @@
                 <div class="col-lg-8 mb-4">
                     <div class="card">
                         <div class="card-body">
-                            <div class="row">
+                            <div class="row align-items-start">
                                 <div class="col-md-8">
                                     <h5 class="card-title mb-2">Order #{{ order.order_number }}</h5>
-                                    <p class="text-muted mb-1">
-                                        <small>{{ order.created_at|date:"M d, Y" }}</small>
+                                    <p class="text-muted mb-0">
+                                        <i class="bi bi-calendar3"></i> {{ order.created_at|date:"M d, Y" }}
                                     </p>
                                 </div>
-                                <div class="col-md-4 text-md-end">
+                                <div class="col-md-4 text-md-end mt-2 mt-md-0">
                                     {% if order.get_status_display == "Completed" %}
                                         <span class="badge badge-success">{{ order.get_status_display }}</span>
                                     {% elif order.get_status_display == "Pending" %}
-                                        <span class="badge" style="background: var(--warning-color); color: #fff;">{{ order.get_status_display }}</span>
+                                        <span class="badge badge-warning">{{ order.get_status_display }}</span>
                                     {% else %}
-                                        <span class="badge" style="background: #6c757d; color: #fff;">{{ order.get_status_display }}</span>
+                                        <span class="badge badge-muted">{{ order.get_status_display }}</span>
                                     {% endif %}
                                 </div>
                             </div>
@@ -40,10 +42,7 @@
             {% endfor %}
         </div>
     {% else %}
-        <div class="alert alert-info text-center py-5">
-            <h5>No orders</h5>
-            <p class="mb-3">You haven't placed any orders yet</p>
-            <a href="{% url 'products:list' %}" class="btn btn-dark">Browse Products</a>
-        </div>
+        {% url 'products:list' as shop_url %}
+        {% include 'partials/empty_state.html' with icon='bi-receipt' title='No orders yet' message="You haven't placed any orders. Start shopping to see your history here." button_url=shop_url button_text='Browse Products' %}
     {% endif %}
 {% endblock %}

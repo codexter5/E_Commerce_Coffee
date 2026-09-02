@@ -3,8 +3,10 @@
 {% block title %}Saved Products - BrewMart{% endblock %}
 
 {% block content %}
-    <h1>Saved Products</h1>
-    <p class="text-muted mb-4">Products you have bookmarked</p>
+    <div class="page-intro">
+        <h1>Saved Products</h1>
+        <p class="text-muted mb-0">Products you have bookmarked for later</p>
+    </div>
 
     {% if wishlist.products.all %}
         <div class="row">
@@ -13,10 +15,7 @@
             {% endfor %}
         </div>
     {% else %}
-        <div class="alert alert-info text-center py-5">
-            <h5>No saved products</h5>
-            <p class="mb-3">Save products for quick access later</p>
-            <a href="{% url 'products:list' %}" class="btn btn-dark">Browse Products</a>
-        </div>
+        {% url 'products:list' as shop_url %}
+        {% include 'partials/empty_state.html' with icon='bi-heart' title='No saved products' message='Save products while browsing to find them quickly later.' button_url=shop_url button_text='Browse Products' %}
     {% endif %}
 {% endblock %}

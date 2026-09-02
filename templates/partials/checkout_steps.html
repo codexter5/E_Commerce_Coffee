@@ -1,0 +1,20 @@
+<nav class="checkout-steps mb-4" aria-label="Checkout progress">
+    <ol class="checkout-steps-list">
+        <li class="checkout-step{% if active_step == 'cart' %} active{% elif active_step != 'cart' %} completed{% endif %}">
+            <span class="checkout-step-number">1</span>
+            <span class="checkout-step-label">Cart</span>
+        </li>
+        <li class="checkout-step{% if active_step == 'delivery' %} active{% elif active_step == 'payment' or active_step == 'confirmation' %} completed{% endif %}">
+            <span class="checkout-step-number">2</span>
+            <span class="checkout-step-label">Delivery</span>
+        </li>
+        <li class="checkout-step{% if active_step == 'payment' %} active{% elif active_step == 'confirmation' %} completed{% endif %}">
+            <span class="checkout-step-number">3</span>
+            <span class="checkout-step-label">Payment</span>
+        </li>
+        <li class="checkout-step{% if active_step == 'confirmation' %} active{% endif %}">
+            <span class="checkout-step-number">4</span>
+            <span class="checkout-step-label">Confirmation</span>
+        </li>
+    </ol>
+</nav>
