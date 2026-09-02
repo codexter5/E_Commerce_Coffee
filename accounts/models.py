@@ -4,7 +4,13 @@ from django.core.validators import MinValueValidator
 from decimal import Decimal
 
 class Profile(models.Model):
+    class Role(models.TextChoices):
+        BUYER = "BUYER", "Buyer"
+        SELLER = "SELLER", "Seller"
+        DELIVERY = "DELIVERY", "Delivery Person"
+
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="profile")
+    role = models.CharField(max_length=20, choices=Role.choices, default=Role.BUYER)
     phone = models.CharField(max_length=30, blank=True)
     address = models.TextField(blank=True)
     city = models.CharField(max_length=80, blank=True)

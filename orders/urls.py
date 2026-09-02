@@ -1,4 +1,4 @@
 from django.urls import path
 from . import views
 app_name="orders"
-urlpatterns=[path("checkout/",views.checkout,name="checkout"),path("payment/",views.payment,name="payment"),path("success/<str:order_number>/",views.success,name="success"),path("history/",views.history,name="history")]
+urlpatterns=[path("checkout/",views.checkout,name="checkout"),path("payment/",views.payment,name="payment"),path("success/<str:order_number>/",views.success,name="success"),path("history/",views.history,name="history"),path("<str:order_number>/transition/<str:new_status>/",views.transition,name="transition")]

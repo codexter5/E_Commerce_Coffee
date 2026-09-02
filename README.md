@@ -25,3 +25,13 @@ Any other card details produce a declined response while leaving the cart unchan
 Run `python manage.py migrate` after pulling the wallet changes. Each account receives a stored-value wallet with a zero starting balance. An administrator can add demonstration funds from `/admin/` by editing a user's Wallet record.
 
 To simulate a peer-to-peer transfer, sign in as the funded user, open **Account > Open wallet and transfer funds**, enter the second user's username and an amount, then submit. Both wallet balances update atomically, a transfer reference is recorded, and transfers larger than the available balance are rejected.
+
+## Order workflow demonstration
+
+Profiles support `BUYER`, `SELLER`, and `DELIVERY` roles. An administrator assigns roles in `/admin/` and assigns a seller to each product. Paid orders start at `PLACED`; the workflow service enforces these transitions:
+
+`PLACED` -> `ACCEPTED` -> `PREPARING` -> `READY_FOR_DELIVERY` -> `ASSIGNED` -> `PICKED_UP` -> `OUT_FOR_DELIVERY` -> `DELIVERED` -> `COMPLETED`
+
+Role-protected POST transitions are available at `/orders/<order_number>/transition/<status>/`. For example, a seller can post to `/orders/ORD-.../transition/accepted/` only for that seller's placed order. Invalid transitions, wrong roles, and delivery reassignment are rejected. Each successful transition creates database notifications for the relevant users.
+
+Notifications can initially be polled with `GET /notifications/`; the response is limited to the authenticated user's notifications. Mark one read with `POST /notifications/<id>/read/`. Both endpoints require login, and the read endpoint also requires CSRF protection.

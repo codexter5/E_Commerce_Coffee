@@ -2,11 +2,14 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db import transaction
 from django.shortcuts import redirect, render
+from django.shortcuts import get_object_or_404
+from django.views.decorators.http import require_POST
 from cart.services import get_cart
 from .forms import CardPaymentForm, CheckoutForm
 from .models import Order, OrderItem
 from .payment_gateway import DummyKhaltiGateway
 from .security import transaction_hash, transaction_signature
+from .workflow import notify_order_placed, transition_order
 
 
 def _create_order(user, form, items, cart, payment_reference):
@@ -17,6 +20,8 @@ def _create_order(user, form, items, cart, payment_reference):
         order = form.save(commit=False)
         order.user = user
         order.total_amount = sum(item.total for item in items)
+        sellers = {item.product.seller for item in items if item.product.seller_id}
+        order.seller = sellers.pop() if len(sellers) == 1 else None
         order.save()
         for item in items:
             OrderItem.objects.create(
@@ -32,6 +37,7 @@ def _create_order(user, form, items, cart, payment_reference):
         order.transaction_hash = transaction_hash(order, payment_reference)
         order.transaction_signature = transaction_signature(order, payment_reference)
         order.save(update_fields=["payment_reference", "transaction_hash", "transaction_signature"])
+        notify_order_placed(order)
         cart.items.all().delete()
     return order
 
@@ -77,3 +83,16 @@ def success(request, order_number):
     return render(request, "orders/success.html", {"order": Order.objects.get(order_number=order_number, user=request.user)})
 @login_required
 def history(request): return render(request, "orders/history.html", {"orders": request.user.orders.prefetch_related("items").all()})
+
+
+@login_required
+@require_POST
+def transition(request, order_number, new_status):
+    order = get_object_or_404(Order, order_number=order_number)
+    try:
+        transition_order(order, request.user, new_status.upper())
+    except ValueError as error:
+        messages.error(request, str(error))
+    else:
+        messages.success(request, f"Order {order.order_number} updated.")
+    return redirect(request.POST.get("next") or "orders:history")

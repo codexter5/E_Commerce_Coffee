@@ -12,6 +12,7 @@ urlpatterns = [
     path("cart/", include("cart.urls")),
     path("wishlist/", include("wishlist.urls")),
     path("orders/", include("orders.urls")),
+    path("notifications/", include("notifications.urls")),
     path("reviews/", include("reviews.urls")),
     path("accounts/", include("django.contrib.auth.urls")),
 ]

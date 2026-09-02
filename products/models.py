@@ -1,5 +1,6 @@
 from django.db import models
 from django.urls import reverse
+from django.contrib.auth.models import User
 
 class Category(models.Model):
     name = models.CharField(max_length=120, unique=True)
@@ -21,6 +22,7 @@ class Product(models.Model):
     discount_price = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
     stock_quantity = models.PositiveIntegerField(default=0)
     image = models.ImageField(upload_to="products/", blank=True)
+    seller = models.ForeignKey(User, on_delete=models.PROTECT, null=True, blank=True, related_name="products")
     brand = models.CharField(max_length=120, blank=True)
     sku = models.CharField(max_length=80, unique=True)
     featured = models.BooleanField(default=False)

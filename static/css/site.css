@@ -404,6 +404,77 @@ p {
   color: var(--danger-color) !important;
 }
 
+.notification-toggle {
+  color: rgba(255, 255, 255, 0.85) !important;
+  cursor: pointer;
+}
+
+.notification-menu {
+  width: min(360px, calc(100vw - 2rem));
+  padding: 0;
+  overflow: hidden;
+}
+
+.notification-menu-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.85rem 1rem;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.notification-list {
+  max-height: 360px;
+  overflow-y: auto;
+}
+
+.notification-item {
+  width: 100%;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.7rem;
+  padding: 0.85rem 1rem;
+  text-align: left;
+  background: #ffffff;
+  border: 0;
+  border-bottom: 1px solid var(--border-subtle);
+  color: var(--text-main);
+}
+
+.notification-item:hover,
+.notification-item:focus {
+  background: var(--amber-50);
+}
+
+.notification-item strong,
+.notification-item small {
+  display: block;
+}
+
+.notification-item strong {
+  font-size: 0.76rem;
+  text-transform: uppercase;
+  color: var(--amber-600);
+}
+
+.notification-item small {
+  margin-top: 0.18rem;
+  line-height: 1.4;
+  color: var(--text-secondary);
+}
+
+.notification-item-icon {
+  color: var(--amber-500);
+  font-size: 1.1rem;
+}
+
+.notification-empty {
+  padding: 1.5rem 1rem;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 0.88rem;
+}
+
 /* Search Bar Wrapper */
 .search-bar-wrapper {
   background: var(--espresso-950);
@@ -713,9 +784,9 @@ p {
 
 .product-card-image {
   display: block;
-  width: 88%;
-  height: 88%;
-  object-fit: contain;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
   object-position: center;
   transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
 }
@@ -1225,8 +1296,8 @@ textarea.form-control:focus {
   justify-content: center;
   width: 100%;
   max-width: 500px;
-  aspect-ratio: 1 / 1;
-  max-height: 500px;
+  aspect-ratio: 3 / 4;
+  max-height: 600px;
   margin-inline: auto;
   overflow: hidden;
 }
@@ -1236,7 +1307,7 @@ textarea.form-control:focus {
   width: 100%;
   height: 100%;
   border-radius: var(--radius-lg);
-  object-fit: contain;
+  object-fit: cover;
   object-position: center;
   transition: transform 0.4s ease;
 }
