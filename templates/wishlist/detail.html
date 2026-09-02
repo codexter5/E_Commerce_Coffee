@@ -1,1 +1,22 @@
-{% extends 'base.html' %}{% block content %}<h1>Wishlist</h1><div class="row">{% for product in wishlist.products.all %}{% include 'products/card.html' %}{% empty %}<p>Save products you love here.</p>{% endfor %}</div>{% endblock %}
+{% extends 'base.html' %}
+
+{% block title %}Saved Products - BrewMart{% endblock %}
+
+{% block content %}
+    <h1>Saved Products</h1>
+    <p class="text-muted mb-4">Products you have bookmarked</p>
+
+    {% if wishlist.products.all %}
+        <div class="row">
+            {% for product in wishlist.products.all %}
+                {% include 'products/card.html' %}
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="alert alert-info text-center py-5">
+            <h5>No saved products</h5>
+            <p class="mb-3">Save products for quick access later</p>
+            <a href="{% url 'products:list' %}" class="btn btn-dark">Browse Products</a>
+        </div>
+    {% endif %}
+{% endblock %}

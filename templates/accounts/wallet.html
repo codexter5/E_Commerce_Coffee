@@ -1,1 +1,73 @@
-{% extends 'base.html' %}{% block content %}<h1>Digital wallet</h1><p class="lead">Available balance: <strong>Rs. {{ wallet.balance }}</strong></p><div class="row"><div class="col-md-7"><h4>Transfer to another account</h4><form method="post">{% csrf_token %}{{ form.as_p }}<button class="btn btn-dark">Send funds</button></form></div><div class="col-md-5"><h4>Recent transfers</h4>{% for transfer in transfers %}<p class="small">{{ transfer.created_at|date:"Y-m-d H:i" }} · {% if transfer.sender_id == user.id %}Sent to {{ transfer.recipient.username }}{% else %}Received from {{ transfer.sender.username }}{% endif %}<br><strong>Rs. {{ transfer.amount }}</strong> · {{ transfer.reference }}</p>{% empty %}<p class="text-muted">No transfers yet.</p>{% endfor %}</div></div>{% endblock %}
+{% extends 'base.html' %}
+
+{% block title %}Digital Wallet - BrewMart{% endblock %}
+
+{% block content %}
+    <h1>Digital Wallet</h1>
+    <p class="text-muted mb-4">Manage your account wallet and transfers</p>
+
+    <!-- Balance Card -->
+    <div class="card mb-5" style="border-left: 4px solid var(--accent-primary);">
+        <div class="card-body">
+            <p class="text-muted mb-1">Current Balance</p>
+            <h2 class="card-price mb-0">Rs. {{ wallet.balance }}</h2>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Transfer Form -->
+        <div class="col-lg-7">
+            <div class="card">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">Send Funds</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        {{ form.as_p }}
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-dark btn-lg">Transfer</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Transfers -->
+        <div class="col-lg-5">
+            <div class="card">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">Transaction History</h5>
+                </div>
+                <div class="card-body">
+                    {% if transfers %}
+                        <div class="space-y-3">
+                            {% for transfer in transfers %}
+                                <div class="border-bottom pb-3 mb-3">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <div>
+                                            <p class="mb-1">
+                                                {% if transfer.sender_id == user.id %}
+                                                    <strong>Sent to {{ transfer.recipient.username }}</strong>
+                                                {% else %}
+                                                    <strong>Received from {{ transfer.sender.username }}</strong>
+                                                {% endif %}
+                                            </p>
+                                            <small class="text-muted">{{ transfer.created_at|date:"M d, Y H:i" }}</small>
+                                        </div>
+                                        <span class="card-price" style="font-size: 1.2rem;">Rs. {{ transfer.amount }}</span>
+                                    </div>
+                                    <small class="text-muted d-block mt-2">Ref: {{ transfer.reference }}</small>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="text-center text-muted py-4">
+                            <p class="mb-0">No transactions yet</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

@@ -1,1 +1,42 @@
-{% extends 'base.html' %}{% block content %}<section class="p-5 mb-5 text-white rounded hero"><h1>Better coffee, every day.</h1><p>Thoughtfully selected beans, machines and brewing essentials.</p><a class="btn btn-light" href="{% url 'products:list' %}">Shop now</a></section><h2>Featured products</h2><div class="row">{% for product in featured_products %}{% include 'products/card.html' %}{% empty %}<p>Add featured products in admin.</p>{% endfor %}</div><h2 class="mt-5">New arrivals</h2><div class="row">{% for product in new_arrivals %}{% include 'products/card.html' %}{% endfor %}</div>{% endblock %}
+{% extends 'base.html' %}
+
+{% block content %}
+    <!-- Hero Section -->
+    <section class="hero mb-5">
+        <h1>Premium Coffee Delivery Service</h1>
+        <p>Carefully sourced beans, professional equipment, and essential brewing supplies.</p>
+        <a class="btn btn-light" href="{% url 'products:list' %}">Browse Products</a>
+    </section>
+
+    <!-- Featured Products -->
+    <section class="mb-5">
+        <h2>Featured Selection</h2>
+        <div class="row">
+            {% for product in featured_products %}
+                {% include 'products/card.html' %}
+            {% empty %}
+                <div class="col-12">
+                    <div class="alert alert-info">
+                        Featured products will be displayed here.
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    </section>
+
+    <!-- New Arrivals -->
+    <section>
+        <h2>Latest Additions</h2>
+        <div class="row">
+            {% for product in new_arrivals %}
+                {% include 'products/card.html' %}
+            {% empty %}
+                <div class="col-12">
+                    <div class="alert alert-info">
+                        New arrivals will be listed here.
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    </section>
+{% endblock %}

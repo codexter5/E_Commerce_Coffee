@@ -1,1 +1,49 @@
-{% extends 'base.html' %}{% block content %}<h1>Your orders</h1>{% for order in orders %}<div class="card mb-2"><div class="card-body"><b>{{ order.order_number }}</b> · {{ order.get_status_display }} · Rs. {{ order.total_amount }}<br><small>{{ order.created_at }}</small></div></div>{% empty %}<p>No orders yet.</p>{% endfor %}{% endblock %}
+{% extends 'base.html' %}
+
+{% block title %}Order History - BrewMart{% endblock %}
+
+{% block content %}
+    <h1>Order History</h1>
+    <p class="text-muted mb-4">View your purchase history</p>
+
+    {% if orders %}
+        <div class="row">
+            {% for order in orders %}
+                <div class="col-lg-8 mb-4">
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-8">
+                                    <h5 class="card-title mb-2">Order #{{ order.order_number }}</h5>
+                                    <p class="text-muted mb-1">
+                                        <small>{{ order.created_at|date:"M d, Y" }}</small>
+                                    </p>
+                                </div>
+                                <div class="col-md-4 text-md-end">
+                                    {% if order.get_status_display == "Completed" %}
+                                        <span class="badge badge-success">{{ order.get_status_display }}</span>
+                                    {% elif order.get_status_display == "Pending" %}
+                                        <span class="badge" style="background: var(--warning-color); color: #fff;">{{ order.get_status_display }}</span>
+                                    {% else %}
+                                        <span class="badge" style="background: #6c757d; color: #fff;">{{ order.get_status_display }}</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <hr>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span>Total Amount</span>
+                                <h5 class="card-price mb-0">Rs. {{ order.total_amount }}</h5>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="alert alert-info text-center py-5">
+            <h5>No orders</h5>
+            <p class="mb-3">You haven't placed any orders yet</p>
+            <a href="{% url 'products:list' %}" class="btn btn-dark">Browse Products</a>
+        </div>
+    {% endif %}
+{% endblock %}

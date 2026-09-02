@@ -1,1 +1,37 @@
-<div class="col-md-3 mb-4"><div class="card h-100"><div class="card-body">{% if product.image %}<img class="img-fluid mb-2" src="{{ product.image.url }}" alt="{{ product.name }}">{% endif %}<small class="text-muted">{{ product.category }}</small><h5><a class="text-dark text-decoration-none" href="{{ product.get_absolute_url }}">{{ product.name }}</a></h5><strong>Rs. {{ product.current_price }}</strong></div><div class="card-footer bg-white"><form method="post" action="{% url 'cart:add' product.id %}">{% csrf_token %}<input type="hidden" name="next" value="{{ request.path }}"><button class="btn btn-dark w-100" {% if not product.stock_quantity %}disabled{% endif %}>Add to cart</button></form></div></div></div>
+<div class="col-lg-3 col-md-4 col-sm-6 mb-4">
+    <div class="card">
+        {% if product.image %}
+            <img class="card-img-top" src="{{ product.image.url }}" alt="{{ product.name }}">
+        {% else %}
+            <div class="card-img-top bg-light d-flex align-items-center justify-content-center" style="height: 200px;">
+                <span class="text-muted">No image</span>
+            </div>
+        {% endif %}
+        <div class="card-body">
+            <span class="card-category">{{ product.category }}</span>
+            <h5 class="card-title">
+                <a href="{{ product.get_absolute_url }}">{{ product.name }}</a>
+            </h5>
+            <p class="card-text text-muted" style="font-size: 0.9rem; margin-bottom: 1rem;">
+                {% if product.brand %}{{ product.brand }}{% endif %}
+            </p>
+            <div class="d-flex justify-content-between align-items-center">
+                <span class="card-price">Rs. {{ product.current_price }}</span>
+                {% if product.stock_quantity %}
+                    <span class="badge badge-success">In Stock</span>
+                {% else %}
+                    <span class="badge" style="background: #ecf0f1; color: #7f8c8d;">Out of Stock</span>
+                {% endif %}
+            </div>
+        </div>
+        <div class="card-footer">
+            <form method="post" action="{% url 'cart:add' product.id %}" class="w-100">
+                {% csrf_token %}
+                <input type="hidden" name="next" value="{{ request.path }}">
+                <button type="submit" class="btn btn-dark w-100" {% if not product.stock_quantity %}disabled{% endif %}>
+                    {% if product.stock_quantity %}Add to Cart{% else %}Out of Stock{% endif %}
+                </button>
+            </form>
+        </div>
+    </div>
+</div>

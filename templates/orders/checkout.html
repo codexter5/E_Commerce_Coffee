@@ -1,1 +1,61 @@
-{% extends 'base.html' %}{% block content %}<h1>Checkout</h1><div class="row"><div class="col-md-7"><form method="post">{% csrf_token %}{{ form.as_p }}<button class="btn btn-dark">Continue to payment</button></form></div><div class="col-md-5"><h4>Order summary</h4>{% for item in items %}<p>{{ item.quantity }} × {{ item.product.name }} — Rs. {{ item.total }}</p>{% endfor %}<hr><b>Total: Rs. {{ total }}</b><p class="small text-muted mt-3">You will be redirected to a Khalti-style demo payment page. No real transaction will be made.</p></div></div>{% endblock %}
+{% extends 'base.html' %}
+
+{% block content %}
+    <h1>Checkout</h1>
+    <p class="text-muted mb-4">Complete your order</p>
+
+    <div class="row">
+        <!-- Delivery Form -->
+        <div class="col-lg-7">
+            <div class="card">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">Delivery Information</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        {{ form.as_p }}
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-dark btn-lg">Continue to Payment</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Order Summary -->
+        <div class="col-lg-5">
+            <div class="card sticky-top" style="top: 20px;">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">Order Summary</h5>
+                </div>
+                <div class="card-body">
+                    {% if items %}
+                        <div class="mb-3">
+                            {% for item in items %}
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span>{{ item.quantity }}× {{ item.product.name }}</span>
+                                    <strong>Rs. {{ item.total }}</strong>
+                                </div>
+                            {% endfor %}
+                        </div>
+                        <hr>
+                        <div class="d-flex justify-content-between mb-3">
+                            <span class="fs-5">Total:</span>
+                            <strong class="fs-5 card-price">Rs. {{ total }}</strong>
+                        </div>
+                        <div class="alert alert-info mb-0">
+                            <small>
+                                <strong>Demo Mode:</strong> You'll be redirected to a demo payment page. No real transaction will be made. Use card number <code>4111 1111 1111 1111</code> to simulate a successful payment.
+                            </small>
+                        </div>
+                    {% else %}
+                        <div class="alert alert-warning">
+                            Your cart is empty. <a href="{% url 'products:list' %}">Add items</a> to continue.
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

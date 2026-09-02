@@ -1,1 +1,41 @@
-{% extends 'base.html' %}{% block content %}<h1>Categories</h1><div class="row">{% for category in categories %}<div class="col-md-3"><a class="card card-body text-decoration-none text-dark mb-3" href="{{ category.get_absolute_url }}">{{ category.name }}</a></div>{% endfor %}</div>{% endblock %}
+{% extends 'base.html' %}
+
+{% block title %}Product Categories - BrewMart{% endblock %}
+
+{% block content %}
+    <h1>Product Categories</h1>
+    <p class="text-muted mb-5">Browse our product catalog by category</p>
+
+    <div class="row">
+        {% for category in categories %}
+            <div class="col-lg-3 col-md-4 col-sm-6 mb-4">
+                <a href="{{ category.get_absolute_url }}" class="text-decoration-none">
+                    <div class="card h-100 category-card">
+                        <div class="card-body text-center" style="padding: 2.5rem 1rem;">
+                            <h5 class="card-title" style="margin-bottom: 1rem;">{{ category.name }}</h5>
+                            <p class="text-muted mb-0" style="font-size: 0.9rem;">View Products →</p>
+                        </div>
+                    </div>
+                </a>
+            </div>
+        {% empty %}
+            <div class="col-12">
+                <div class="alert alert-info text-center">
+                    <h5>No categories available</h5>
+                    <p class="mb-0">Categories will appear here once added</p>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+
+    <style>
+        .category-card {
+            transition: var(--transition);
+            cursor: pointer;
+        }
+        .category-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-md);
+        }
+    </style>
+{% endblock %}
