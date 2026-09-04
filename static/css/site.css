@@ -1813,6 +1813,13 @@ textarea.form-control:focus {
   border: 1px solid var(--border-medium);
 }
 
+.badge-danger,
+.text-bg-danger {
+  background: #fbe4e4 !important;
+  color: #b3261e !important;
+  border: 1px solid #f3b9b9;
+}
+
 /* Empty State */
 .empty-state {
   padding: 4.5rem 1.5rem;

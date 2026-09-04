@@ -1,0 +1,46 @@
+{% extends 'dashboard/base_dashboard.html' %}
+
+{% block title %}Manage Orders - BrewMart Admin{% endblock %}
+
+{% block dashboard_content %}
+    <div class="page-intro pb-2 mb-4 border-bottom">
+        <h1 class="mb-1">Orders</h1>
+        <p class="text-muted mb-0">View and override any order's fulfillment status.</p>
+    </div>
+
+    <form method="get" class="d-flex flex-wrap gap-2 mb-3">
+        <input type="search" name="q" value="{{ q }}" class="form-control" style="max-width: 260px;" placeholder="Search order #, name, email...">
+        <select name="status" class="form-select" style="max-width: 200px;" onchange="this.form.submit()">
+            <option value="">All statuses</option>
+            {% for value, label in statuses %}
+                <option value="{{ value }}" {% if status == value %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+        </select>
+        <button type="submit" class="btn btn-outline-dark"><i class="bi bi-search"></i></button>
+        {% if q or status %}<a href="{% url 'dashboard:orders_list' %}" class="btn btn-link">Clear</a>{% endif %}
+    </form>
+
+    <div class="card shadow-sm">
+        <div class="table-responsive">
+            <table class="table table-dashboard mb-0">
+                <thead><tr><th>Order</th><th>Buyer</th><th>Total</th><th>Payment</th><th>Status</th><th>Placed</th><th class="text-end">Actions</th></tr></thead>
+                <tbody>
+                    {% for order in page_obj %}
+                        <tr>
+                            <td class="font-monospace">{{ order.order_number }}</td>
+                            <td>{{ order.full_name }}</td>
+                            <td>Rs. {{ order.total_amount }}</td>
+                            <td>{{ order.get_payment_method_display }} {% if not order.is_paid %}<span class="badge badge-warning ms-1">Due</span>{% endif %}</td>
+                            <td><span class="badge badge-muted">{{ order.get_status_display }}</span></td>
+                            <td class="small text-muted">{{ order.created_at|date:"M d, Y" }}</td>
+                            <td class="text-end"><a href="{% url 'dashboard:order_detail' order.order_number %}" class="btn btn-sm btn-outline-dark">View</a></td>
+                        </tr>
+                    {% empty %}
+                        <tr><td colspan="7" class="text-center text-muted py-4">No orders match your filters.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% include 'dashboard/_pagination.html' %}
+{% endblock %}

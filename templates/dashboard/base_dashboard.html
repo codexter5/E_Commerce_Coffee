@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <style>
+        .dashboard-sidebar .list-group-item { border: none; border-radius: .5rem; margin-bottom: .15rem; color: #4b4340; font-weight: 500; }
+        .dashboard-sidebar .list-group-item:hover { background: var(--amber-50); color: var(--amber-600); }
+        .dashboard-sidebar .list-group-item.active { background: linear-gradient(135deg, var(--amber-500) 0%, var(--amber-600) 100%); color: #fff; }
+        .dashboard-stat-card { border-radius: .75rem; }
+        .dashboard-stat-icon { width: 44px; height: 44px; border-radius: .6rem; display: flex; align-items: center; justify-content: center; background: var(--amber-50); color: var(--amber-600); font-size: 1.1rem; }
+        .table-dashboard th { text-transform: uppercase; font-size: .72rem; letter-spacing: .03em; color: #8a8078; border-bottom-width: 1px; }
+        .table-dashboard td { vertical-align: middle; }
+    </style>
+
+    <div class="row g-4">
+        <div class="col-lg-3">
+            <div class="card shadow-sm dashboard-sidebar mb-3">
+                <div class="card-body p-3">
+                    <h6 class="text-uppercase text-muted small fw-bold mb-3 px-2">Admin Dashboard</h6>
+                    <div class="list-group list-group-flush">
+                        <a href="{% url 'dashboard:home' %}" class="list-group-item list-group-item-action{% if active == 'home' %} active{% endif %}"><i class="bi bi-speedometer2 me-2"></i>Overview</a>
+                        <a href="{% url 'dashboard:users_list' %}" class="list-group-item list-group-item-action{% if active == 'users' %} active{% endif %}"><i class="bi bi-people me-2"></i>Users</a>
+                        <a href="{% url 'dashboard:products_list' %}" class="list-group-item list-group-item-action{% if active == 'products' %} active{% endif %}"><i class="bi bi-box-seam me-2"></i>Products</a>
+                        <a href="{% url 'dashboard:categories_list' %}" class="list-group-item list-group-item-action{% if active == 'categories' %} active{% endif %}"><i class="bi bi-tags me-2"></i>Categories</a>
+                        <a href="{% url 'dashboard:orders_list' %}" class="list-group-item list-group-item-action{% if active == 'orders' %} active{% endif %}"><i class="bi bi-receipt me-2"></i>Orders</a>
+                    </div>
+                </div>
+            </div>
+            <div class="card border-0 bg-light">
+                <div class="card-body p-3 small text-muted">
+                    <i class="bi bi-info-circle-fill text-amber me-1"></i>
+                    Prefer Django's built-in admin? It's still available at <a href="/admin/" target="_blank">/admin/</a> — both stay in sync.
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-9">
+            {% block dashboard_content %}{% endblock %}
+        </div>
+    </div>
+{% endblock %}

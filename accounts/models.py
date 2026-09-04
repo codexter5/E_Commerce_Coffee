@@ -8,6 +8,7 @@ class Profile(models.Model):
         BUYER = "BUYER", "Buyer"
         SELLER = "SELLER", "Seller"
         DELIVERY = "DELIVERY", "Delivery Person"
+        ADMIN = "ADMIN", "Admin"
 
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="profile")
     role = models.CharField(max_length=20, choices=Role.choices, default=Role.BUYER)

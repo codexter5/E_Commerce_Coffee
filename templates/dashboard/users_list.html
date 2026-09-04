@@ -1,0 +1,68 @@
+{% extends 'dashboard/base_dashboard.html' %}
+
+{% block title %}Manage Users - BrewMart Admin{% endblock %}
+
+{% block dashboard_content %}
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3 pb-3 border-bottom">
+        <div class="page-intro mb-0">
+            <h1 class="mb-1">Users</h1>
+            <p class="text-muted mb-0">Create accounts and manage roles for admins, sellers, buyers, and delivery staff.</p>
+        </div>
+        <a href="{% url 'dashboard:user_create' %}" class="btn btn-dark"><i class="bi bi-plus-lg me-1"></i> Add User</a>
+    </div>
+
+    <form method="get" class="d-flex flex-wrap gap-2 mb-3">
+        <input type="search" name="q" value="{{ q }}" class="form-control" style="max-width: 260px;" placeholder="Search username, name, email...">
+        <select name="role" class="form-select" style="max-width: 200px;" onchange="this.form.submit()">
+            <option value="">All roles</option>
+            {% for value, label in roles %}
+                <option value="{{ value }}" {% if role == value %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+        </select>
+        <button type="submit" class="btn btn-outline-dark"><i class="bi bi-search"></i></button>
+        {% if q or role %}<a href="{% url 'dashboard:users_list' %}" class="btn btn-link">Clear</a>{% endif %}
+    </form>
+
+    <div class="card shadow-sm">
+        <div class="table-responsive">
+            <table class="table table-dashboard mb-0">
+                <thead>
+                    <tr><th>User</th><th>Email</th><th>Role</th><th>Status</th><th>Joined</th><th class="text-end">Actions</th></tr>
+                </thead>
+                <tbody>
+                    {% for u in page_obj %}
+                        <tr>
+                            <td>
+                                <div class="fw-semibold text-dark">{{ u.username }}</div>
+                                <div class="small text-muted">{{ u.get_full_name|default:"—" }}</div>
+                            </td>
+                            <td>{{ u.email|default:"—" }}</td>
+                            <td>
+                                <span class="badge {% if u.profile.role == 'ADMIN' %}badge-success{% elif u.profile.role == 'SELLER' %}badge-warning{% else %}badge-muted{% endif %}">
+                                    {{ u.profile.get_role_display }}
+                                </span>
+                            </td>
+                            <td>
+                                {% if u.is_active %}<span class="badge badge-success">Active</span>{% else %}<span class="badge badge-muted">Disabled</span>{% endif %}
+                                {% if u.is_superuser %}<span class="badge badge-danger">Superuser</span>{% endif %}
+                            </td>
+                            <td class="small text-muted">{{ u.date_joined|date:"M d, Y" }}</td>
+                            <td class="text-end">
+                                <a href="{% url 'dashboard:user_edit' u.pk %}" class="btn btn-sm btn-outline-dark"><i class="bi bi-pencil"></i></a>
+                                {% if u.pk != request.user.pk and not u.is_superuser %}
+                                    <form method="post" action="{% url 'dashboard:user_delete' u.pk %}" class="d-inline" onsubmit="return confirm('Delete this account? This cannot be undone.');">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
+                                    </form>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% empty %}
+                        <tr><td colspan="6" class="text-center text-muted py-4">No users match your filters.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% include 'dashboard/_pagination.html' %}
+{% endblock %}

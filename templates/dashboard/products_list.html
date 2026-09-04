@@ -1,0 +1,54 @@
+{% extends 'dashboard/base_dashboard.html' %}
+
+{% block title %}Manage Products - BrewMart Admin{% endblock %}
+
+{% block dashboard_content %}
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3 pb-3 border-bottom">
+        <div class="page-intro mb-0">
+            <h1 class="mb-1">Products</h1>
+            <p class="text-muted mb-0">Manage the full catalog across every seller.</p>
+        </div>
+        <a href="{% url 'dashboard:product_create' %}" class="btn btn-dark"><i class="bi bi-plus-lg me-1"></i> Add Product</a>
+    </div>
+
+    <form method="get" class="d-flex flex-wrap gap-2 mb-3">
+        <input type="search" name="q" value="{{ q }}" class="form-control" style="max-width: 280px;" placeholder="Search name, SKU, brand...">
+        <button type="submit" class="btn btn-outline-dark"><i class="bi bi-search"></i></button>
+        {% if q %}<a href="{% url 'dashboard:products_list' %}" class="btn btn-link">Clear</a>{% endif %}
+    </form>
+
+    <div class="card shadow-sm">
+        <div class="table-responsive">
+            <table class="table table-dashboard mb-0">
+                <thead>
+                    <tr><th>Product</th><th>Category</th><th>Seller</th><th>Price</th><th>Stock</th><th>Status</th><th class="text-end">Actions</th></tr>
+                </thead>
+                <tbody>
+                    {% for product in page_obj %}
+                        <tr>
+                            <td>
+                                <div class="fw-semibold text-dark">{{ product.name }}</div>
+                                <div class="small text-muted">SKU: {{ product.sku }}</div>
+                            </td>
+                            <td>{{ product.category.name }}</td>
+                            <td>{{ product.seller.username|default:"—" }}</td>
+                            <td>Rs. {{ product.current_price }}{% if product.discount_price %}<div class="small text-muted text-decoration-line-through">Rs. {{ product.price }}</div>{% endif %}</td>
+                            <td><span class="badge {% if product.stock_quantity == 0 %}badge-danger{% elif product.stock_quantity <= 5 %}badge-warning{% else %}badge-muted{% endif %}">{{ product.stock_quantity }}</span></td>
+                            <td>{% if product.is_active %}<span class="badge badge-success">Active</span>{% else %}<span class="badge badge-muted">Hidden</span>{% endif %}{% if product.featured %}<span class="badge badge-primary ms-1">Featured</span>{% endif %}</td>
+                            <td class="text-end">
+                                <a href="{% url 'dashboard:product_edit' product.pk %}" class="btn btn-sm btn-outline-dark"><i class="bi bi-pencil"></i></a>
+                                <form method="post" action="{% url 'dashboard:product_delete' product.pk %}" class="d-inline" onsubmit="return confirm('Delete this product? This cannot be undone.');">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
+                                </form>
+                            </td>
+                        </tr>
+                    {% empty %}
+                        <tr><td colspan="7" class="text-center text-muted py-4">No products match your search.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% include 'dashboard/_pagination.html' %}
+{% endblock %}

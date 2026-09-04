@@ -1,0 +1,39 @@
+{% extends 'dashboard/base_dashboard.html' %}
+
+{% block title %}Manage Categories - BrewMart Admin{% endblock %}
+
+{% block dashboard_content %}
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3 pb-3 border-bottom">
+        <div class="page-intro mb-0">
+            <h1 class="mb-1">Categories</h1>
+            <p class="text-muted mb-0">Organize how products are grouped across the storefront.</p>
+        </div>
+        <a href="{% url 'dashboard:category_create' %}" class="btn btn-dark"><i class="bi bi-plus-lg me-1"></i> Add Category</a>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="table-responsive">
+            <table class="table table-dashboard mb-0">
+                <thead><tr><th>Category</th><th>Slug</th><th>Products</th><th class="text-end">Actions</th></tr></thead>
+                <tbody>
+                    {% for category in categories %}
+                        <tr>
+                            <td class="fw-semibold text-dark">{{ category.name }}</td>
+                            <td class="text-muted">{{ category.slug }}</td>
+                            <td><span class="badge badge-muted">{{ category.product_count }}</span></td>
+                            <td class="text-end">
+                                <a href="{% url 'dashboard:category_edit' category.pk %}" class="btn btn-sm btn-outline-dark"><i class="bi bi-pencil"></i></a>
+                                <form method="post" action="{% url 'dashboard:category_delete' category.pk %}" class="d-inline" onsubmit="return confirm('Delete this category?');">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-sm btn-outline-danger" {% if category.product_count %}disabled title="Move or delete its products first"{% endif %}><i class="bi bi-trash"></i></button>
+                                </form>
+                            </td>
+                        </tr>
+                    {% empty %}
+                        <tr><td colspan="4" class="text-center text-muted py-4">No categories yet.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% endblock %}

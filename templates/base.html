@@ -110,6 +110,10 @@
                                     <li><a class="dropdown-item" href="{% url 'accounts:wallet' %}"><i class="bi bi-wallet2 me-2"></i>Digital Wallet</a></li>
                                     <li><a class="dropdown-item" href="{% url 'orders:history' %}"><i class="bi bi-box-seam me-2"></i>Order History</a></li>
                                     <li><a class="dropdown-item" href="{% url 'wishlist:detail' %}"><i class="bi bi-heart me-2"></i>Saved Wishlist</a></li>
+                                    {% if user.profile.role == 'ADMIN' or user.is_superuser %}
+                                        <li><hr class="dropdown-divider"></li>
+                                        <li><a class="dropdown-item" href="{% url 'dashboard:home' %}"><i class="bi bi-speedometer2 me-2"></i>Admin Dashboard</a></li>
+                                    {% endif %}
                                     <li><hr class="dropdown-divider"></li>
                                     <li>
                                         <form method="post" action="{% url 'logout' %}">

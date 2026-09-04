@@ -23,6 +23,11 @@ class Order(models.Model):
     transaction_hash = models.CharField(max_length=64, blank=True)
     transaction_signature = models.CharField(max_length=64, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
+    accepted_at = models.DateTimeField(null=True, blank=True)
+    ready_at = models.DateTimeField(null=True, blank=True)
+    picked_up_at = models.DateTimeField(null=True, blank=True)
+    delivered_at = models.DateTimeField(null=True, blank=True)
+    completed_at = models.DateTimeField(null=True, blank=True)
     def save(self, *args, **kwargs):
         if not self.order_number: self.order_number = f"ORD-{uuid.uuid4().hex[:10].upper()}"
         super().save(*args, **kwargs)
