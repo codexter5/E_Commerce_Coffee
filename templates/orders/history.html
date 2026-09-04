@@ -34,8 +34,15 @@
                                 </div>
                             </div>
                             <hr class="my-3">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="text-muted small text-uppercase fw-bold">Payment Method</span>
+                                <span class="fw-semibold text-dark">
+                                    {{ order.get_payment_method_display }}
+                                    {% if not order.is_paid %}<span class="badge badge-warning ms-1">Due</span>{% endif %}
+                                </span>
+                            </div>
                             <div class="d-flex justify-content-between align-items-center">
-                                <span class="text-muted small text-uppercase fw-bold">Total Paid</span>
+                                <span class="text-muted small text-uppercase fw-bold">Total {% if order.is_paid %}Paid{% else %}Due{% endif %}</span>
                                 <div class="d-flex align-items-baseline">
                                     <span class="card-price-currency fs-5">Rs.</span>
                                     <span class="card-price fs-3">{{ order.total_amount }}</span>

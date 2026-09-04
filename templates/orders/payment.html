@@ -7,10 +7,12 @@
         {% include 'partials/checkout_steps.html' with active_step='confirmation' %}
         <div class="text-center py-5">
             <div class="success-icon"><i class="bi bi-check-lg"></i></div>
-            <h1 class="mb-2">Payment Authorized</h1>
+            <h1 class="mb-2">{% if order.payment_method == 'COD' %}Order Placed{% else %}Payment Authorized{% endif %}</h1>
             <p class="text-muted mb-4">{{ result.message }}</p>
             <div class="card mb-4 mx-auto shadow-sm" style="max-width: 480px;">
                 <div class="card-body p-4">
+                    <p class="text-muted small text-uppercase mb-1">Payment Method</p>
+                    <h6 class="mb-3">{{ order.get_payment_method_display }}</h6>
                     <p class="text-muted small text-uppercase mb-1">Transaction Reference</p>
                     <h5 class="mb-0 font-monospace text-dark fw-bold">{{ result.reference }}</h5>
                         <p class="text-muted small text-uppercase mt-3 mb-1">SHA-256 transaction hash</p>
@@ -26,65 +28,157 @@
         {% include 'partials/checkout_steps.html' with active_step='payment' %}
 
         <div class="page-intro pb-2 mb-4 border-bottom">
-            <h1 class="mb-1">{{ gateway_name }}</h1>
-            <p class="text-muted mb-0">Complete your encrypted payment of <strong class="text-dark">Rs. {{ total }}</strong></p>
+            <h1 class="mb-1">Choose a Payment Method</h1>
+            <p class="text-muted mb-0">Complete your order of <strong class="text-dark">Rs. {{ total }}</strong></p>
         </div>
+
+        <ul class="nav nav-pills mb-4 flex-wrap gap-2" role="tablist">
+            {% for value, label in payment_methods %}
+                <li class="nav-item" role="presentation">
+                    <a href="{% url 'orders:payment' %}?method={{ value }}"
+                       class="nav-link {% if method == value %}active{% endif %}">
+                        {% if value == 'CARD' %}<i class="bi bi-credit-card-2-front-fill me-1"></i>{% endif %}
+                        {% if value == 'KHALTI' %}<i class="bi bi-phone-fill me-1"></i>{% endif %}
+                        {% if value == 'ESEWA' %}<i class="bi bi-wallet2 me-1"></i>{% endif %}
+                        {% if value == 'COD' %}<i class="bi bi-cash-stack me-1"></i>{% endif %}
+                        {{ label }}
+                    </a>
+                </li>
+            {% endfor %}
+        </ul>
 
         <div class="row g-4 align-items-start">
             <div class="col-lg-7">
                 <div class="card shadow-sm mb-4">
                     <div class="card-header bg-card-subtle py-3 d-flex justify-content-between align-items-center">
-                        <h5 class="mb-0"><i class="bi bi-credit-card-2-front-fill text-amber me-2"></i>Enter Card Details</h5>
-                        <span class="badge badge-success"><i class="bi bi-lock-fill me-1"></i>SSL Encrypted</span>
+                        <h5 class="mb-0">{{ gateway_name }}</h5>
+                        {% if method != 'COD' %}
+                            <span class="badge badge-success"><i class="bi bi-lock-fill me-1"></i>SSL Encrypted</span>
+                        {% endif %}
                     </div>
                     <div class="card-body p-4">
-                        <form method="post">
-                            {% csrf_token %}
-                            {% include 'partials/form_fields.html' with form=form %}
-                            <div class="d-grid mt-4">
-                                <button type="submit" class="btn btn-dark btn-lg">
-                                    <i class="bi bi-shield-check me-1"></i> Authorize & Pay Rs. {{ total }}
-                                </button>
+                        {% if method == 'COD' %}
+                            <div class="alert alert-info d-flex align-items-start">
+                                <i class="bi bi-info-circle-fill text-info fs-5 me-2 flex-shrink-0"></i>
+                                <div>
+                                    Pay in cash directly to the delivery person when your order arrives.
+                                    No payment is collected online.
+                                </div>
                             </div>
-                        </form>
+                            <form method="post">
+                                {% csrf_token %}
+                                <input type="hidden" name="payment_method" value="COD">
+                                <div class="d-grid mt-3">
+                                    <button type="submit" class="btn btn-dark btn-lg">
+                                        <i class="bi bi-cash-stack me-1"></i> Place Order (Pay Rs. {{ total }} on Delivery)
+                                    </button>
+                                </div>
+                            </form>
+                        {% else %}
+                            <form method="post">
+                                {% csrf_token %}
+                                <input type="hidden" name="payment_method" value="{{ method }}">
+                                {% include 'partials/form_fields.html' with form=form %}
+                                <div class="d-grid mt-4">
+                                    <button type="submit" class="btn btn-dark btn-lg">
+                                        <i class="bi bi-shield-check me-1"></i> Authorize & Pay Rs. {{ total }}
+                                    </button>
+                                </div>
+                            </form>
+                        {% endif %}
                     </div>
                 </div>
             </div>
 
             <div class="col-lg-5">
-                <div class="demo-card shadow-md mb-4">
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <span class="small text-uppercase fw-bold text-warning letter-spacing-1">BrewMart Test Card</span>
-                        <i class="bi bi-wifi fs-4 text-warning"></i>
+                {% if method == 'CARD' %}
+                    <div class="demo-card shadow-md mb-4">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <span class="small text-uppercase fw-bold text-warning letter-spacing-1">BrewMart Test Card</span>
+                            <i class="bi bi-wifi fs-4 text-warning"></i>
+                        </div>
+                        <div class="demo-card-chip"></div>
+                        <div class="mb-3">
+                            <div class="small text-muted mb-1" style="font-size: 0.72rem;">CARD NUMBER</div>
+                            <div class="font-monospace fs-5 text-white fw-bold">4111 &bull;&bull;&bull;&bull; &bull;&bull;&bull;&bull; 1111</div>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <div class="small text-muted" style="font-size: 0.68rem;">EXPIRY</div>
+                                <div class="font-monospace text-white fw-bold">12/30</div>
+                            </div>
+                            <div>
+                                <div class="small text-muted" style="font-size: 0.68rem;">CVV</div>
+                                <div class="font-monospace text-white fw-bold">123</div>
+                            </div>
+                            <div class="text-end">
+                                <i class="bi bi-credit-card fs-2 text-warning"></i>
+                            </div>
+                        </div>
                     </div>
-                    <div class="demo-card-chip"></div>
-                    <div class="mb-3">
-                        <div class="small text-muted mb-1" style="font-size: 0.72rem;">CARD NUMBER</div>
-                        <div class="font-monospace fs-5 text-white fw-bold">4111 &bull;&bull;&bull;&bull; &bull;&bull;&bull;&bull; 1111</div>
+                    <div class="card p-3 bg-light border text-muted small">
+                        <div class="d-flex gap-2">
+                            <i class="bi bi-info-circle-fill text-amber fs-5 flex-shrink-0"></i>
+                            <div><strong>Demo Environment:</strong> Use the card details shown above. No real funds will be deducted.</div>
+                        </div>
                     </div>
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <div class="small text-muted" style="font-size: 0.68rem;">EXPIRY</div>
-                            <div class="font-monospace text-white fw-bold">12/30</div>
+                {% elif method == 'KHALTI' %}
+                    <div class="demo-card shadow-md mb-4">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <span class="small text-uppercase fw-bold text-warning letter-spacing-1">Khalti Test Wallet</span>
+                            <i class="bi bi-phone-fill fs-4 text-warning"></i>
+                        </div>
+                        <div class="mb-3">
+                            <div class="small text-muted mb-1" style="font-size: 0.72rem;">KHALTI ID</div>
+                            <div class="font-monospace fs-5 text-white fw-bold">9800000000</div>
                         </div>
                         <div>
-                            <div class="small text-muted" style="font-size: 0.68rem;">CVV</div>
-                            <div class="font-monospace text-white fw-bold">123</div>
-                        </div>
-                        <div class="text-end">
-                            <i class="bi bi-credit-card fs-2 text-warning"></i>
+                            <div class="small text-muted" style="font-size: 0.68rem;">MPIN</div>
+                            <div class="font-monospace text-white fw-bold">1111</div>
                         </div>
                     </div>
-                </div>
-
-                <div class="card p-3 bg-light border text-muted small">
-                    <div class="d-flex gap-2">
-                        <i class="bi bi-info-circle-fill text-amber fs-5 flex-shrink-0"></i>
+                    <div class="card p-3 bg-light border text-muted small">
+                        <div class="d-flex gap-2">
+                            <i class="bi bi-info-circle-fill text-amber fs-5 flex-shrink-0"></i>
+                            <div><strong>Demo Environment:</strong> Use the Khalti ID and MPIN shown above. No real funds will be deducted.</div>
+                        </div>
+                    </div>
+                {% elif method == 'ESEWA' %}
+                    <div class="demo-card shadow-md mb-4">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <span class="small text-uppercase fw-bold text-warning letter-spacing-1">eSewa Test Wallet</span>
+                            <i class="bi bi-wallet2 fs-4 text-warning"></i>
+                        </div>
+                        <div class="mb-3">
+                            <div class="small text-muted mb-1" style="font-size: 0.72rem;">ESEWA ID</div>
+                            <div class="font-monospace fs-5 text-white fw-bold">9800000001</div>
+                        </div>
+                        <div class="mb-3">
+                            <div class="small text-muted" style="font-size: 0.68rem;">PASSWORD</div>
+                            <div class="font-monospace text-white fw-bold">Nepal@123</div>
+                        </div>
                         <div>
-                            <strong>Demo Environment:</strong> You can test with the credentials shown on the card above. No real funds will be deducted from your bank.
+                            <div class="small text-muted" style="font-size: 0.68rem;">TOKEN / OTP</div>
+                            <div class="font-monospace text-white fw-bold">123456</div>
                         </div>
                     </div>
-                </div>
+                    <div class="card p-3 bg-light border text-muted small">
+                        <div class="d-flex gap-2">
+                            <i class="bi bi-info-circle-fill text-amber fs-5 flex-shrink-0"></i>
+                            <div><strong>Demo Environment:</strong> Use the eSewa credentials shown above. No real funds will be deducted.</div>
+                        </div>
+                    </div>
+                {% else %}
+                    <div class="card p-4 bg-light border text-muted">
+                        <div class="d-flex gap-2">
+                            <i class="bi bi-truck fs-2 text-amber flex-shrink-0"></i>
+                            <div>
+                                <strong>How Cash on Delivery works:</strong>
+                                <p class="mb-0 small mt-1">Keep exact change of Rs. {{ total }} ready. Our delivery partner will collect payment when your coffee arrives.</p>
+                            </div>
+                        </div>
+                    </div>
+                {% endif %}
             </div>
         </div>
     {% endif %}

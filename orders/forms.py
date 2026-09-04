@@ -26,3 +26,22 @@ class CardPaymentForm(forms.Form):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         apply_bootstrap_styles(self)
+
+
+class KhaltiPaymentForm(forms.Form):
+    khalti_id = forms.CharField(max_length=20, label="Khalti ID (mobile number)", help_text="Use the demo Khalti ID shown on the right.")
+    pin = forms.CharField(max_length=10, min_length=4, label="MPIN", strip=False, widget=forms.PasswordInput)
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        apply_bootstrap_styles(self)
+
+
+class EsewaPaymentForm(forms.Form):
+    esewa_id = forms.CharField(max_length=20, label="eSewa ID")
+    password = forms.CharField(max_length=32, label="Password", strip=False, widget=forms.PasswordInput)
+    otp = forms.CharField(max_length=6, min_length=6, label="Token / OTP", help_text="Use the demo token shown on the right.")
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        apply_bootstrap_styles(self)
