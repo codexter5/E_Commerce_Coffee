@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    {% include 'dashboard/_dashboard_styles.html' %}
+
+    <div class="row g-4">
+        <div class="col-lg-3">
+            <div class="card shadow-sm dashboard-sidebar mb-3">
+                <div class="card-body p-3">
+                    <h6 class="text-uppercase text-muted small fw-bold mb-3 px-2">Seller Dashboard</h6>
+                    <div class="list-group list-group-flush">
+                        <a href="{% url 'dashboard:seller_home' %}" class="list-group-item list-group-item-action{% if active == 'seller_home' %} active{% endif %}"><i class="bi bi-speedometer2 me-2"></i>Overview</a>
+                        <a href="{% url 'dashboard:seller_products_list' %}" class="list-group-item list-group-item-action{% if active == 'seller_products' %} active{% endif %}"><i class="bi bi-box-seam me-2"></i>My Products</a>
+                        <a href="{% url 'dashboard:seller_orders_list' %}" class="list-group-item list-group-item-action{% if active == 'seller_orders' %} active{% endif %}"><i class="bi bi-receipt me-2"></i>My Orders</a>
+                    </div>
+                </div>
+            </div>
+            <div class="card border-0 bg-light">
+                <div class="card-body p-3 small text-muted">
+                    <i class="bi bi-info-circle-fill text-amber me-1"></i>
+                    Only your own products and orders show up here — buyers see everything you mark <strong>Active</strong>.
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-9">
+            {% block dashboard_content %}{% endblock %}
+        </div>
+    </div>
+{% endblock %}

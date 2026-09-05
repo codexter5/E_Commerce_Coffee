@@ -9,11 +9,15 @@ from django.views.decorators.http import require_POST
 from accounts.models import Profile
 from notifications.models import Notification
 from orders.models import Order
-from orders.workflow import NOTIFICATION_DETAILS
+from orders.workflow import NOTIFICATION_DETAILS, TRANSITIONS, transition_order
 from products.models import Category, Product
 
-from .decorators import admin_required
-from .forms import AdminUserCreateForm, AdminUserEditForm, CategoryForm, OrderStatusForm, ProductForm
+from .decorators import admin_required, delivery_required, seller_required
+from .forms import AdminUserCreateForm, AdminUserEditForm, CategoryForm, OrderStatusForm, ProductForm, SellerProductForm
+
+
+def _is_admin(user):
+    return getattr(getattr(user, "profile", None), "role", None) == "ADMIN" or user.is_superuser
 
 
 @admin_required
@@ -209,3 +213,214 @@ def order_detail(request, order_number):
             messages.success(request, f"Order {order.order_number} status set to {order.get_status_display()}.")
         return redirect("dashboard:order_detail", order_number=order.order_number)
     return render(request, "dashboard/order_detail.html", {"order": order, "form": form, "active": "orders"})
+
+
+# ===================================================================
+# Seller dashboard — scoped to the logged-in seller's own catalog and
+# their own orders. Admins may also open these pages (useful for
+# support), but ownership checks below still apply to admins visiting
+# as a "seller of record" unless they truly are the seller/owner.
+# ===================================================================
+
+def _seller_product_queryset(request):
+    if _is_admin(request.user):
+        return Product.objects.all()
+    return Product.objects.filter(seller=request.user)
+
+
+def _seller_order_queryset(request):
+    if _is_admin(request.user):
+        return Order.objects.all()
+    return Order.objects.filter(seller=request.user)
+
+
+@seller_required
+def seller_home(request):
+    products = Product.objects.filter(seller=request.user)
+    orders = Order.objects.filter(seller=request.user)
+    stats = {
+        "total_products": products.count(),
+        "active_products": products.filter(is_active=True).count(),
+        "low_stock_products": products.filter(stock_quantity__lte=5, is_active=True).count(),
+        "out_of_stock_products": products.filter(stock_quantity=0).count(),
+        "total_orders": orders.count(),
+        "new_orders": orders.filter(status=Order.Status.PLACED).count(),
+        "in_progress_orders": orders.filter(status__in=[Order.Status.ACCEPTED, Order.Status.PREPARING]).count(),
+        "revenue": orders.filter(is_paid=True).aggregate(total=Sum("total_amount"))["total"] or 0,
+    }
+    recent_orders = orders.select_related("user").order_by("-created_at")[:8]
+    low_stock = products.filter(stock_quantity__lte=5, is_active=True).order_by("stock_quantity")[:8]
+    return render(request, "dashboard/seller_home.html", {
+        "stats": stats, "recent_orders": recent_orders, "low_stock": low_stock, "active": "seller_home",
+    })
+
+
+@seller_required
+def seller_products_list(request):
+    products = _seller_product_queryset(request).select_related("category").order_by("-created_at")
+    q = request.GET.get("q", "").strip()
+    if q:
+        products = products.filter(Q(name__icontains=q) | Q(sku__icontains=q) | Q(brand__icontains=q))
+    page_obj = Paginator(products, 20).get_page(request.GET.get("page"))
+    return render(request, "dashboard/seller_products_list.html", {"page_obj": page_obj, "q": q, "active": "seller_products"})
+
+
+@seller_required
+def seller_product_create(request):
+    form = SellerProductForm(request.POST or None, request.FILES or None)
+    if request.method == "POST" and form.is_valid():
+        product = form.save(commit=False)
+        product.seller = request.user
+        product.save()
+        messages.success(request, f"Product \"{product.name}\" was added to your storefront.")
+        return redirect("dashboard:seller_products_list")
+    return render(request, "dashboard/seller_product_form.html", {"form": form, "mode": "create", "active": "seller_products"})
+
+
+@seller_required
+def seller_product_edit(request, pk):
+    product = get_object_or_404(_seller_product_queryset(request), pk=pk)
+    form = SellerProductForm(request.POST or None, request.FILES or None, instance=product)
+    if request.method == "POST" and form.is_valid():
+        form.save()
+        messages.success(request, f"Product \"{product.name}\" was updated.")
+        return redirect("dashboard:seller_products_list")
+    return render(request, "dashboard/seller_product_form.html", {
+        "form": form, "mode": "edit", "product": product, "active": "seller_products",
+    })
+
+
+@seller_required
+@require_POST
+def seller_product_delete(request, pk):
+    product = get_object_or_404(_seller_product_queryset(request), pk=pk)
+    name = product.name
+    product.delete()
+    messages.success(request, f"Product \"{name}\" was removed from your storefront.")
+    return redirect("dashboard:seller_products_list")
+
+
+@seller_required
+def seller_orders_list(request):
+    orders = _seller_order_queryset(request).select_related("user").order_by("-created_at")
+    status = request.GET.get("status", "").strip()
+    q = request.GET.get("q", "").strip()
+    if status:
+        orders = orders.filter(status=status)
+    if q:
+        orders = orders.filter(Q(order_number__icontains=q) | Q(full_name__icontains=q))
+    page_obj = Paginator(orders, 20).get_page(request.GET.get("page"))
+    return render(request, "dashboard/seller_orders_list.html", {
+        "page_obj": page_obj, "status": status, "q": q, "statuses": Order.Status.choices, "active": "seller_orders",
+    })
+
+
+@seller_required
+def seller_order_detail(request, order_number):
+    order = get_object_or_404(_seller_order_queryset(request).prefetch_related("items"), order_number=order_number)
+    next_steps = TRANSITIONS.get(order.status, {})
+    seller_next_steps = [status for status, role in next_steps.items() if role == "SELLER"]
+    if request.method == "POST":
+        new_status = request.POST.get("new_status")
+        try:
+            transition_order(order, request.user, new_status)
+        except ValueError as exc:
+            messages.error(request, str(exc))
+        else:
+            messages.success(request, f"Order {order.order_number} moved to {order.get_status_display()}.")
+        return redirect("dashboard:seller_order_detail", order_number=order.order_number)
+    return render(request, "dashboard/seller_order_detail.html", {
+        "order": order, "seller_next_steps": seller_next_steps,
+        "status_labels": dict(Order.Status.choices), "active": "seller_orders",
+    })
+
+
+# ===================================================================
+# Delivery dashboard — riders claim unassigned "ready for delivery"
+# orders, then walk their own claimed orders through pickup ->
+# out-for-delivery -> delivered. Admins may also open these pages.
+# ===================================================================
+
+ACTIVE_DELIVERY_STATUSES = [Order.Status.ASSIGNED, Order.Status.PICKED_UP, Order.Status.OUT_FOR_DELIVERY]
+
+
+def _delivery_available_queryset():
+    return Order.objects.filter(status=Order.Status.READY_FOR_DELIVERY, delivery_person__isnull=True)
+
+
+def _delivery_my_queryset(request):
+    if _is_admin(request.user):
+        return Order.objects.exclude(delivery_person__isnull=True)
+    return Order.objects.filter(delivery_person=request.user)
+
+
+@delivery_required
+def delivery_home(request):
+    available = _delivery_available_queryset()
+    mine = _delivery_my_queryset(request)
+    stats = {
+        "available_count": available.count(),
+        "active_deliveries": mine.filter(status__in=ACTIVE_DELIVERY_STATUSES).count(),
+        "completed_deliveries": mine.filter(status__in=[Order.Status.DELIVERED, Order.Status.COMPLETED]).count(),
+    }
+    recent_available = available.order_by("ready_at")[:8]
+    active_orders = mine.filter(status__in=ACTIVE_DELIVERY_STATUSES).select_related("user").order_by("-created_at")[:8]
+    return render(request, "dashboard/delivery_home.html", {
+        "stats": stats, "recent_available": recent_available, "active_orders": active_orders, "active": "delivery_home",
+    })
+
+
+@delivery_required
+def delivery_available_list(request):
+    orders = _delivery_available_queryset().order_by("ready_at")
+    q = request.GET.get("q", "").strip()
+    if q:
+        orders = orders.filter(Q(order_number__icontains=q) | Q(city__icontains=q))
+    page_obj = Paginator(orders, 20).get_page(request.GET.get("page"))
+    return render(request, "dashboard/delivery_available_list.html", {"page_obj": page_obj, "q": q, "active": "delivery_available"})
+
+
+@delivery_required
+def delivery_my_orders_list(request):
+    orders = _delivery_my_queryset(request).select_related("user").order_by("-created_at")
+    status = request.GET.get("status", "").strip()
+    q = request.GET.get("q", "").strip()
+    if status:
+        orders = orders.filter(status=status)
+    if q:
+        orders = orders.filter(Q(order_number__icontains=q) | Q(full_name__icontains=q))
+    page_obj = Paginator(orders, 20).get_page(request.GET.get("page"))
+    delivery_statuses = [
+        (value, label) for value, label in Order.Status.choices
+        if value in ("ASSIGNED", "PICKED_UP", "OUT_FOR_DELIVERY", "DELIVERED", "COMPLETED")
+    ]
+    return render(request, "dashboard/delivery_my_orders_list.html", {
+        "page_obj": page_obj, "status": status, "q": q, "statuses": delivery_statuses, "active": "delivery_my_orders",
+    })
+
+
+@delivery_required
+def delivery_order_detail(request, order_number):
+    if _is_admin(request.user):
+        qs = Order.objects.all()
+    else:
+        qs = Order.objects.filter(
+            Q(delivery_person=request.user) | Q(status=Order.Status.READY_FOR_DELIVERY, delivery_person__isnull=True)
+        )
+    order = get_object_or_404(qs.prefetch_related("items"), order_number=order_number)
+    next_steps = TRANSITIONS.get(order.status, {})
+    delivery_next_steps = [status for status, role in next_steps.items() if role == "DELIVERY"]
+    if request.method == "POST":
+        new_status = request.POST.get("new_status")
+        try:
+            transition_order(order, request.user, new_status)
+        except ValueError as exc:
+            messages.error(request, str(exc))
+        else:
+            verb = "claimed" if new_status == "ASSIGNED" else "updated"
+            messages.success(request, f"Order {order.order_number} {verb} — now {order.get_status_display()}.")
+        return redirect("dashboard:delivery_order_detail", order_number=order.order_number)
+    return render(request, "dashboard/delivery_order_detail.html", {
+        "order": order, "delivery_next_steps": delivery_next_steps,
+        "active": "delivery_my_orders" if order.delivery_person_id else "delivery_available",
+    })

@@ -23,4 +23,17 @@ urlpatterns = [
 
     path("orders/", views.orders_list, name="orders_list"),
     path("orders/<str:order_number>/", views.order_detail, name="order_detail"),
+
+    path("seller/", views.seller_home, name="seller_home"),
+    path("seller/products/", views.seller_products_list, name="seller_products_list"),
+    path("seller/products/add/", views.seller_product_create, name="seller_product_create"),
+    path("seller/products/<int:pk>/edit/", views.seller_product_edit, name="seller_product_edit"),
+    path("seller/products/<int:pk>/delete/", views.seller_product_delete, name="seller_product_delete"),
+    path("seller/orders/", views.seller_orders_list, name="seller_orders_list"),
+    path("seller/orders/<str:order_number>/", views.seller_order_detail, name="seller_order_detail"),
+
+    path("delivery/", views.delivery_home, name="delivery_home"),
+    path("delivery/available/", views.delivery_available_list, name="delivery_available_list"),
+    path("delivery/orders/", views.delivery_my_orders_list, name="delivery_my_orders_list"),
+    path("delivery/orders/<str:order_number>/", views.delivery_order_detail, name="delivery_order_detail"),
 ]

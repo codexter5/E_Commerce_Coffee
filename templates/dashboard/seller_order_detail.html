@@ -1,0 +1,82 @@
+{% extends 'dashboard/base_seller.html' %}
+
+{% block title %}Order {{ order.order_number }} - BrewMart Seller{% endblock %}
+
+{% block dashboard_content %}
+    <div class="page-intro pb-2 mb-4 border-bottom d-flex justify-content-between align-items-start flex-wrap gap-2">
+        <div>
+            <h1 class="mb-1 font-monospace">{{ order.order_number }}</h1>
+            <p class="text-muted mb-0">Placed {{ order.created_at|date:"M d, Y H:i" }} by {{ order.full_name }}</p>
+        </div>
+        <span class="badge badge-muted fs-6">{{ order.get_status_display }}</span>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-lg-7">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-card-subtle py-3"><h6 class="mb-0"><i class="bi bi-box-seam me-2 text-amber"></i>Items</h6></div>
+                <div class="table-responsive">
+                    <table class="table table-dashboard mb-0">
+                        <thead><tr><th>Product</th><th>Qty</th><th>Price</th><th class="text-end">Total</th></tr></thead>
+                        <tbody>
+                            {% for item in order.items.all %}
+                                <tr>
+                                    <td>{{ item.product_name }}</td>
+                                    <td>{{ item.quantity }}</td>
+                                    <td>Rs. {{ item.price }}</td>
+                                    <td class="text-end">Rs. {{ item.total }}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                        <tfoot>
+                            <tr><th colspan="3" class="text-end">Total</th><th class="text-end">Rs. {{ order.total_amount }}</th></tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+
+            <div class="card shadow-sm">
+                <div class="card-header bg-card-subtle py-3"><h6 class="mb-0"><i class="bi bi-geo-alt me-2 text-amber"></i>Delivery Details</h6></div>
+                <div class="card-body p-4">
+                    <dl class="row mb-0 small">
+                        <dt class="col-4 text-muted">Recipient</dt><dd class="col-8">{{ order.full_name }}</dd>
+                        <dt class="col-4 text-muted">Phone</dt><dd class="col-8">{{ order.phone }}</dd>
+                        <dt class="col-4 text-muted">Address</dt><dd class="col-8">{{ order.shipping_address }}, {{ order.city }} {{ order.postal_code }}</dd>
+                        <dt class="col-4 text-muted">Payment</dt><dd class="col-8">{{ order.get_payment_method_display }} &middot; {% if order.is_paid %}Paid{% else %}Due on delivery{% endif %}</dd>
+                        <dt class="col-4 text-muted">Delivery Person</dt><dd class="col-8">{{ order.delivery_person.username|default:"Not yet assigned" }}</dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-5">
+            <div class="card shadow-sm">
+                <div class="card-header bg-card-subtle py-3"><h6 class="mb-0"><i class="bi bi-arrow-repeat me-2 text-amber"></i>Fulfillment</h6></div>
+                <div class="card-body p-4">
+                    {% if seller_next_steps %}
+                        <p class="small text-muted">Move this order to the next stage of your workflow.</p>
+                        {% for step in seller_next_steps %}
+                            <form method="post" class="mb-2">
+                                {% csrf_token %}
+                                <input type="hidden" name="new_status" value="{{ step }}">
+                                <button type="submit" class="btn w-100 {% if step == 'CANCELLED' %}btn-outline-danger{% else %}btn-dark{% endif %}"
+                                        onclick="return confirm('{% if step == 'CANCELLED' %}Cancel this order? This cannot be undone.{% else %}Move this order forward in the fulfillment process?{% endif %}');">
+                                    {% if step == 'ACCEPTED' %}<i class="bi bi-check-circle me-1"></i> Accept Order
+                                    {% elif step == 'PREPARING' %}<i class="bi bi-cup-hot me-1"></i> Start Preparing
+                                    {% elif step == 'READY_FOR_DELIVERY' %}<i class="bi bi-box-arrow-up me-1"></i> Mark Ready for Delivery
+                                    {% elif step == 'CANCELLED' %}<i class="bi bi-x-circle me-1"></i> Cancel Order
+                                    {% endif %}
+                                </button>
+                            </form>
+                        {% endfor %}
+                    {% else %}
+                        <p class="small text-muted mb-0">
+                            {% if order.status == 'CANCELLED' %}This order was cancelled.
+                            {% else %}This order has moved past your stage — it's now with delivery or the buyer.{% endif %}
+                        </p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

@@ -1,0 +1,86 @@
+{% extends 'dashboard/base_delivery.html' %}
+
+{% block title %}Order {{ order.order_number }} - BrewMart Delivery{% endblock %}
+
+{% block dashboard_content %}
+    <div class="page-intro pb-2 mb-4 border-bottom d-flex justify-content-between align-items-start flex-wrap gap-2">
+        <div>
+            <h1 class="mb-1 font-monospace">{{ order.order_number }}</h1>
+            <p class="text-muted mb-0">Ready {{ order.ready_at|date:"M d, Y H:i"|default:"—" }}</p>
+        </div>
+        <span class="badge badge-muted fs-6">{{ order.get_status_display }}</span>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-lg-7">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-card-subtle py-3"><h6 class="mb-0"><i class="bi bi-geo-alt me-2 text-amber"></i>Drop-off Details</h6></div>
+                <div class="card-body p-4">
+                    <dl class="row mb-0 small">
+                        <dt class="col-4 text-muted">Recipient</dt><dd class="col-8">{{ order.full_name }}</dd>
+                        <dt class="col-4 text-muted">Phone</dt><dd class="col-8">{{ order.phone }}</dd>
+                        <dt class="col-4 text-muted">Address</dt><dd class="col-8">{{ order.shipping_address }}, {{ order.city }} {{ order.postal_code }}</dd>
+                        <dt class="col-4 text-muted">Payment</dt>
+                        <dd class="col-8">
+                            {{ order.get_payment_method_display }}
+                            {% if order.is_paid %}
+                                <span class="badge badge-success ms-1">Already paid</span>
+                            {% else %}
+                                <span class="badge badge-danger ms-1">Collect Rs. {{ order.total_amount }} in cash</span>
+                            {% endif %}
+                        </dd>
+                    </dl>
+                </div>
+            </div>
+
+            <div class="card shadow-sm">
+                <div class="card-header bg-card-subtle py-3"><h6 class="mb-0"><i class="bi bi-box-seam me-2 text-amber"></i>Items</h6></div>
+                <div class="table-responsive">
+                    <table class="table table-dashboard mb-0">
+                        <thead><tr><th>Product</th><th>Qty</th></tr></thead>
+                        <tbody>
+                            {% for item in order.items.all %}
+                                <tr><td>{{ item.product_name }}</td><td>{{ item.quantity }}</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-5">
+            <div class="card shadow-sm">
+                <div class="card-header bg-card-subtle py-3"><h6 class="mb-0"><i class="bi bi-arrow-repeat me-2 text-amber"></i>Delivery Progress</h6></div>
+                <div class="card-body p-4">
+                    {% if delivery_next_steps %}
+                        {% for step in delivery_next_steps %}
+                            <form method="post" class="mb-2">
+                                {% csrf_token %}
+                                <input type="hidden" name="new_status" value="{{ step }}">
+                                <button type="submit" class="btn btn-dark w-100"
+                                        onclick="return confirm('{% if step == 'ASSIGNED' %}Claim this delivery? It will be assigned to you.{% else %}Confirm this update?{% endif %}');">
+                                    {% if step == 'ASSIGNED' %}<i class="bi bi-hand-index-thumb me-1"></i> Claim This Delivery
+                                    {% elif step == 'PICKED_UP' %}<i class="bi bi-box-arrow-in-down me-1"></i> Mark Picked Up
+                                    {% elif step == 'OUT_FOR_DELIVERY' %}<i class="bi bi-truck me-1"></i> Start Delivery
+                                    {% elif step == 'DELIVERED' %}<i class="bi bi-check-circle me-1"></i> Mark Delivered
+                                    {% endif %}
+                                </button>
+                            </form>
+                        {% endfor %}
+                    {% else %}
+                        <p class="small text-muted mb-0">
+                            {% if order.status == 'DELIVERED' or order.status == 'COMPLETED' %}
+                                This order has been delivered. Nice work.
+                            {% else %}
+                                No action needed from delivery right now.
+                            {% endif %}
+                        </p>
+                    {% endif %}
+                    {% if order.delivery_person %}
+                        <div class="small text-muted mt-3 pt-3 border-top">Assigned rider: <strong class="text-dark">{{ order.delivery_person.username }}</strong></div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

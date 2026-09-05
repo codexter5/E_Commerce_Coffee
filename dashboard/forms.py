@@ -70,6 +70,24 @@ class ProductForm(forms.ModelForm):
         apply_bootstrap_styles(self)
 
 
+class SellerProductForm(forms.ModelForm):
+    """Used by sellers to manage their own catalog. Unlike the admin ProductForm,
+    there's no `seller` picker (it's fixed to the logged-in seller) and no `featured`
+    flag (homepage featuring is an admin-level curation decision)."""
+
+    class Meta:
+        model = Product
+        fields = (
+            "category", "name", "slug", "description", "brand", "sku",
+            "price", "discount_price", "stock_quantity", "image", "is_active",
+        )
+        widgets = {"description": forms.Textarea(attrs={"rows": 4})}
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        apply_bootstrap_styles(self)
+
+
 class CategoryForm(forms.ModelForm):
     class Meta:
         model = Category

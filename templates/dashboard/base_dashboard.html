@@ -1,15 +1,7 @@
 {% extends 'base.html' %}
 
 {% block content %}
-    <style>
-        .dashboard-sidebar .list-group-item { border: none; border-radius: .5rem; margin-bottom: .15rem; color: #4b4340; font-weight: 500; }
-        .dashboard-sidebar .list-group-item:hover { background: var(--amber-50); color: var(--amber-600); }
-        .dashboard-sidebar .list-group-item.active { background: linear-gradient(135deg, var(--amber-500) 0%, var(--amber-600) 100%); color: #fff; }
-        .dashboard-stat-card { border-radius: .75rem; }
-        .dashboard-stat-icon { width: 44px; height: 44px; border-radius: .6rem; display: flex; align-items: center; justify-content: center; background: var(--amber-50); color: var(--amber-600); font-size: 1.1rem; }
-        .table-dashboard th { text-transform: uppercase; font-size: .72rem; letter-spacing: .03em; color: #8a8078; border-bottom-width: 1px; }
-        .table-dashboard td { vertical-align: middle; }
-    </style>
+    {% include 'dashboard/_dashboard_styles.html' %}
 
     <div class="row g-4">
         <div class="col-lg-3">
@@ -37,3 +29,4 @@
         </div>
     </div>
 {% endblock %}
+

@@ -36,3 +36,18 @@ def seller_required(view_func):
         return view_func(request, *args, **kwargs)
 
     return wrapper
+
+
+def delivery_required(view_func):
+    """Restrict a view to accounts with Profile.role == DELIVERY (admins may also pass)."""
+
+    @wraps(view_func)
+    @login_required
+    def wrapper(request, *args, **kwargs):
+        role = _role(request.user)
+        if role not in ("DELIVERY", "ADMIN") and not request.user.is_superuser:
+            messages.error(request, "You need a delivery account to view that page.")
+            return redirect("core:home")
+        return view_func(request, *args, **kwargs)
+
+    return wrapper

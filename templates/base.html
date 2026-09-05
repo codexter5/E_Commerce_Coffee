@@ -113,6 +113,12 @@
                                     {% if user.profile.role == 'ADMIN' or user.is_superuser %}
                                         <li><hr class="dropdown-divider"></li>
                                         <li><a class="dropdown-item" href="{% url 'dashboard:home' %}"><i class="bi bi-speedometer2 me-2"></i>Admin Dashboard</a></li>
+                                    {% elif user.profile.role == 'SELLER' %}
+                                        <li><hr class="dropdown-divider"></li>
+                                        <li><a class="dropdown-item" href="{% url 'dashboard:seller_home' %}"><i class="bi bi-shop me-2"></i>Seller Dashboard</a></li>
+                                    {% elif user.profile.role == 'DELIVERY' %}
+                                        <li><hr class="dropdown-divider"></li>
+                                        <li><a class="dropdown-item" href="{% url 'dashboard:delivery_home' %}"><i class="bi bi-truck me-2"></i>Delivery Dashboard</a></li>
                                     {% endif %}
                                     <li><hr class="dropdown-divider"></li>
                                     <li>
