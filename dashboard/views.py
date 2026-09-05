@@ -9,7 +9,7 @@ from django.views.decorators.http import require_POST
 from accounts.models import Profile
 from notifications.models import Notification
 from orders.models import Order
-from orders.workflow import NOTIFICATION_DETAILS, TRANSITIONS, transition_order
+from orders.workflow import NOTIFICATION_DETAILS, TRANSITIONS, send_status_update_notifications, transition_order
 from products.models import Category, Product
 
 from .decorators import admin_required, delivery_required, seller_required
@@ -205,11 +205,23 @@ def order_detail(request, order_number):
                 order.status = new_status
                 order.save(update_fields=["status"])
                 notification_type, message = NOTIFICATION_DETAILS.get(new_status, (None, None))
-                if notification_type and order.user_id and order.user_id != request.user.pk:
-                    Notification.objects.create(
-                        recipient=order.user, order=order, notification_type=notification_type,
-                        message=f"Order {order.order_number}: {message} (updated by admin)",
-                    )
+                if notification_type:
+                    # In-app bell notification for everyone tied to this order (buyer,
+                    # seller, assigned rider) -- same set transition_order() notifies.
+                    recipients = {order.user_id: order.user}
+                    if order.seller_id:
+                        recipients[order.seller_id] = order.seller
+                    if order.delivery_person_id:
+                        recipients[order.delivery_person_id] = order.delivery_person
+                    recipients.pop(request.user.pk, None)
+                    for recipient in recipients.values():
+                        Notification.objects.create(
+                            recipient=recipient, order=order, notification_type=notification_type,
+                            message=f"Order {order.order_number}: {message} (updated by admin)",
+                        )
+                    # Email/WhatsApp to whoever EXTERNAL_NOTIFY_ON says should hear about
+                    # this status externally -- the same precise routing transition_order() uses.
+                    send_status_update_notifications(order, new_status, f"{message} (updated by admin)", request.user)
             messages.success(request, f"Order {order.order_number} status set to {order.get_status_display()}.")
         return redirect("dashboard:order_detail", order_number=order.order_number)
     return render(request, "dashboard/order_detail.html", {"order": order, "form": form, "active": "orders"})

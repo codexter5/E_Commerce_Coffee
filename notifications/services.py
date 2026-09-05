@@ -42,26 +42,70 @@ def _send_whatsapp(phone, message):
         logger.exception("WhatsApp notification failed: %s", error)
 
 
-def _send_channels(order, subject, body):
+def _contact_for(recipient, order):
+    """Work out which email/phone to use for a given recipient.
+
+    For the buyer, we prefer the contact details they typed into the checkout
+    form for *this specific order* (order.email / order.phone) over their
+    account email, since that's the number/address they told us to reach them
+    on for this delivery. For every other recipient (seller, delivery rider,
+    admin) there's no per-order override, so we use their account email and
+    the phone number on their profile.
+    """
+    if order and order.user_id and recipient.id == order.user_id:
+        return order.email or recipient.email, order.phone
+    phone = getattr(getattr(recipient, "profile", None), "phone", "")
+    return recipient.email, phone
+
+
+def notify_recipient(recipient, order, subject, body):
+    """Send subject/body to one recipient over every enabled channel
+    (email and/or WhatsApp, per ORDER_NOTIFICATION_CHANNELS), using
+    whichever contact details are appropriate for that recipient/order pair.
+    Safe to call even if the recipient has no email or no phone on file --
+    each channel is skipped individually rather than raising.
+    """
     channels = _channels()
+    if not channels or recipient is None:
+        return
+    email, phone = _contact_for(recipient, order)
 
-    if "email" in channels and order.email:
+    if "email" in channels and email:
         try:
-            send_mail(subject, body, settings.DEFAULT_FROM_EMAIL, [order.email], fail_silently=False)
+            send_mail(subject, body, settings.DEFAULT_FROM_EMAIL, [email], fail_silently=False)
         except Exception:
-            logger.exception("Email notification failed for order %s", order.order_number)
+            logger.exception(
+                "Email notification failed for order %s -> %s",
+                order.order_number if order else "-", recipient,
+            )
 
-    if "whatsapp" in channels:
-        _send_whatsapp(order.phone, body)
-
-
-def send_order_status_notification(order, status, message):
-    _send_channels(order, f"Order {order.order_number}: {status.title()}", message)
+    if "whatsapp" in channels and phone:
+        _send_whatsapp(phone, body)
 
 
 def send_order_confirmation_notification(order):
+    """Buyer-facing: sent the moment checkout completes."""
     body = (
         f"Your order {order.order_number} has been confirmed. "
-        f"Total: {order.total_amount}. We will update you when its status changes."
+        f"Total: Rs. {order.total_amount}. We'll message you again as its status changes."
     )
-    _send_channels(order, f"Order confirmation: {order.order_number}", body)
+    notify_recipient(order.user, order, f"Order confirmation: {order.order_number}", body)
+
+
+def send_seller_new_order_notification(order):
+    """Seller-facing: sent the moment a buyer checks out with one of their products."""
+    if not order.seller_id:
+        return
+    body = (
+        f"New order {order.order_number} for Rs. {order.total_amount} is waiting for your review. "
+        f"Log in to your seller dashboard to accept it."
+    )
+    notify_recipient(order.seller, order, f"New order received: {order.order_number}", body)
+
+
+def send_status_update_to_recipient(recipient, order, new_status, message):
+    """Used for every order-lifecycle step (accepted, preparing, ready,
+    assigned, picked up, out for delivery, delivered, completed, cancelled) --
+    whoever needs to know gets routed here individually."""
+    subject = f"Order {order.order_number}: {new_status.replace('_', ' ').title()}"
+    notify_recipient(recipient, order, subject, message)
