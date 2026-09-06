@@ -12,6 +12,7 @@
                         <a href="{% url 'dashboard:delivery_home' %}" class="list-group-item list-group-item-action{% if active == 'delivery_home' %} active{% endif %}"><i class="bi bi-speedometer2 me-2"></i>Overview</a>
                         <a href="{% url 'dashboard:delivery_available_list' %}" class="list-group-item list-group-item-action{% if active == 'delivery_available' %} active{% endif %}"><i class="bi bi-signpost-split me-2"></i>Available Orders</a>
                         <a href="{% url 'dashboard:delivery_my_orders_list' %}" class="list-group-item list-group-item-action{% if active == 'delivery_my_orders' %} active{% endif %}"><i class="bi bi-truck me-2"></i>My Deliveries</a>
+                        <a href="{% url 'dashboard:delivery_notification_test' %}" class="list-group-item list-group-item-action{% if active == 'delivery_notifications' %} active{% endif %}"><i class="bi bi-bell-fill me-2"></i>Notifications</a>
                     </div>
                 </div>
             </div>

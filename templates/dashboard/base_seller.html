@@ -12,6 +12,7 @@
                         <a href="{% url 'dashboard:seller_home' %}" class="list-group-item list-group-item-action{% if active == 'seller_home' %} active{% endif %}"><i class="bi bi-speedometer2 me-2"></i>Overview</a>
                         <a href="{% url 'dashboard:seller_products_list' %}" class="list-group-item list-group-item-action{% if active == 'seller_products' %} active{% endif %}"><i class="bi bi-box-seam me-2"></i>My Products</a>
                         <a href="{% url 'dashboard:seller_orders_list' %}" class="list-group-item list-group-item-action{% if active == 'seller_orders' %} active{% endif %}"><i class="bi bi-receipt me-2"></i>My Orders</a>
+                        <a href="{% url 'dashboard:seller_notification_test' %}" class="list-group-item list-group-item-action{% if active == 'seller_notifications' %} active{% endif %}"><i class="bi bi-bell-fill me-2"></i>Notifications</a>
                     </div>
                 </div>
             </div>

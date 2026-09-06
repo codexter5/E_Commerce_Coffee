@@ -350,17 +350,34 @@ def seller_order_detail(request, order_number):
     order = get_object_or_404(_seller_order_queryset(request).prefetch_related("items"), order_number=order_number)
     next_steps = TRANSITIONS.get(order.status, {})
     seller_next_steps = [status for status, role in next_steps.items() if role == "SELLER"]
+    # Riders sorted by how many active deliveries they're already carrying, so
+    # the seller can see who's free at a glance when choosing someone directly.
+    delivery_riders = User.objects.filter(profile__role=Profile.Role.DELIVERY, is_active=True).annotate(
+        active_deliveries=Count("delivery_orders", filter=Q(delivery_orders__status__in=ACTIVE_DELIVERY_STATUSES))
+    ).order_by("active_deliveries", "username")
     if request.method == "POST":
         new_status = request.POST.get("new_status")
+        assignee = None
+        if new_status == "ASSIGNED":
+            delivery_person_id = request.POST.get("delivery_person_id")
+            if not delivery_person_id:
+                messages.error(request, "Choose a delivery person to assign this order to.")
+                return redirect("dashboard:seller_order_detail", order_number=order.order_number)
+            assignee = get_object_or_404(
+                User.objects.filter(profile__role=Profile.Role.DELIVERY), pk=delivery_person_id
+            )
         try:
-            transition_order(order, request.user, new_status)
+            transition_order(order, request.user, new_status, assignee=assignee)
         except ValueError as exc:
             messages.error(request, str(exc))
         else:
-            messages.success(request, f"Order {order.order_number} moved to {order.get_status_display()}.")
+            if assignee is not None:
+                messages.success(request, f"Order {order.order_number} assigned directly to {assignee.username}.")
+            else:
+                messages.success(request, f"Order {order.order_number} moved to {order.get_status_display()}.")
         return redirect("dashboard:seller_order_detail", order_number=order.order_number)
     return render(request, "dashboard/seller_order_detail.html", {
-        "order": order, "seller_next_steps": seller_next_steps,
+        "order": order, "seller_next_steps": seller_next_steps, "delivery_riders": delivery_riders,
         "status_labels": dict(Order.Status.choices), "active": "seller_orders",
     })
 
@@ -462,9 +479,10 @@ def delivery_order_detail(request, order_number):
 # needing shell/server-log access.
 # ===================================================================
 
-@admin_required
-def notification_settings(request):
-    status = notification_config_status()
+def _notification_test_flow(request):
+    """Shared logic for the notification test tool across admin/seller/delivery
+    dashboards: prefill with the user's own contact info, run the test send on
+    POST, and return (form, results) for the view to render."""
     initial = {"email": request.user.email, "phone": getattr(getattr(request.user, "profile", None), "phone", "")}
     form = TestNotificationForm(request.POST or None, initial=initial)
     results = None
@@ -477,6 +495,31 @@ def notification_settings(request):
             messages.error(request, "The test send finished, but at least one channel failed -- see details below.")
         else:
             messages.success(request, "Test message sent -- check the results below and your inbox/WhatsApp.")
+    return form, results
+
+
+@admin_required
+def notification_settings(request):
+    status = notification_config_status()
+    form, results = _notification_test_flow(request)
     return render(request, "dashboard/notification_settings.html", {
         "status": status, "form": form, "results": results, "active": "notifications",
+    })
+
+
+@seller_required
+def seller_notification_test(request):
+    form, results = _notification_test_flow(request)
+    channels = notification_config_status()["channels"]
+    return render(request, "dashboard/seller_notification_test.html", {
+        "form": form, "results": results, "channels": channels, "active": "seller_notifications",
+    })
+
+
+@delivery_required
+def delivery_notification_test(request):
+    form, results = _notification_test_flow(request)
+    channels = notification_config_status()["channels"]
+    return render(request, "dashboard/delivery_notification_test.html", {
+        "form": form, "results": results, "channels": channels, "active": "delivery_notifications",
     })

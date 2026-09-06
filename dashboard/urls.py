@@ -33,9 +33,11 @@ urlpatterns = [
     path("seller/products/<int:pk>/delete/", views.seller_product_delete, name="seller_product_delete"),
     path("seller/orders/", views.seller_orders_list, name="seller_orders_list"),
     path("seller/orders/<str:order_number>/", views.seller_order_detail, name="seller_order_detail"),
+    path("seller/notifications/", views.seller_notification_test, name="seller_notification_test"),
 
     path("delivery/", views.delivery_home, name="delivery_home"),
     path("delivery/available/", views.delivery_available_list, name="delivery_available_list"),
     path("delivery/orders/", views.delivery_my_orders_list, name="delivery_my_orders_list"),
     path("delivery/orders/<str:order_number>/", views.delivery_order_detail, name="delivery_order_detail"),
+    path("delivery/notifications/", views.delivery_notification_test, name="delivery_notification_test"),
 ]

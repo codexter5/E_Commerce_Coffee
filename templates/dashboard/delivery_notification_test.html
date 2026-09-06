@@ -1,0 +1,68 @@
+{% extends 'dashboard/base_delivery.html' %}
+
+{% block title %}Notifications - BrewMart Delivery{% endblock %}
+
+{% block dashboard_content %}
+    <div class="page-intro pb-2 mb-4 border-bottom">
+        <h1 class="mb-1">Notifications</h1>
+        <p class="text-muted mb-0">Confirm you're actually receiving delivery alerts on your own email/WhatsApp.</p>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-lg-5">
+            <div class="card border-0 bg-light mb-4">
+                <div class="card-body p-4">
+                    <div class="small text-muted text-uppercase fw-bold mb-2">What you get notified about</div>
+                    <ul class="small mb-3 ps-3">
+                        <li>A broadcast to every rider when a new order becomes ready to claim</li>
+                        <li>A confirmation every time you claim, pick up, start delivering, or mark delivered</li>
+                        <li>A closing notice once the buyer confirms they received it</li>
+                    </ul>
+                    <div class="small text-muted text-uppercase fw-bold mb-2">Store-wide channels</div>
+                    {% if channels %}
+                        {% for channel in channels %}<span class="badge badge-success me-1">{{ channel }}</span>{% endfor %}
+                    {% else %}
+                        <span class="badge badge-danger">None enabled yet</span>
+                        <div class="form-text">Ask the store admin to turn on email/WhatsApp notifications store-wide.</div>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="card border-0 bg-light">
+                <div class="card-body p-3 small text-muted">
+                    <i class="bi bi-info-circle-fill text-amber me-1"></i>
+                    If the test below fails because your email or phone is wrong, update them on your
+                    <a href="{% url 'accounts:profile' %}">Profile page</a> — that's what future delivery notifications use.
+                    If it fails for another reason, the message will explain why.
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-7">
+            <div class="card shadow-sm">
+                <div class="card-header bg-card-subtle py-3"><h6 class="mb-0"><i class="bi bi-send-fill text-amber me-2"></i>Send Yourself a Test Message</h6></div>
+                <div class="card-body p-4">
+                    <form method="post">
+                        {% csrf_token %}
+                        {% if form.non_field_errors %}
+                            <div class="alert alert-danger small py-2 px-3">{{ form.non_field_errors|join:" " }}</div>
+                        {% endif %}
+                        {% include 'partials/form_fields.html' with form=form %}
+                        <div class="d-grid mt-3">
+                            <button type="submit" class="btn btn-dark btn-lg"><i class="bi bi-send me-1"></i> Send Test Message</button>
+                        </div>
+                    </form>
+
+                    {% if results %}
+                        <hr>
+                        <div class="small text-muted text-uppercase fw-bold mb-2">Result</div>
+                        {% for channel, detail in results.items %}
+                            <div class="alert {% if 'FAILED' in detail or channel == 'error' %}alert-danger{% else %}alert-success{% endif %} small py-2 px-3">
+                                <strong>{{ channel }}:</strong> {{ detail }}
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

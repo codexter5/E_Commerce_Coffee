@@ -6,6 +6,7 @@ from urllib.request import Request, urlopen
 
 from django.conf import settings
 from django.core.mail import send_mail
+from django.utils import timezone
 
 
 logger = logging.getLogger(__name__)
@@ -130,9 +131,20 @@ def _order_summary(order):
     """A few extra lines of receipt-style detail appended to every message so
     whoever reads it (buyer, seller, delivery rider, admin) has the full
     picture in writing -- proof of exactly what the order was and where it
-    stands, without needing to open the dashboard to check."""
+    stands, without needing to open the dashboard to check.
+
+    Order ID and timestamp go in the body (not just the email subject) since
+    WhatsApp messages have no subject line at all -- without this, a WhatsApp
+    notification would never actually say which order it's about. Place
+    (the delivery address) matters most for delivery riders deciding whether
+    a job is even feasible for them before they claim it, but it's included
+    for everyone for the same "proof in writing" reason as the rest.
+    """
     lines = [
+        f"Order: {order.order_number}",
+        f"When: {timezone.now().strftime('%b %d, %Y %I:%M %p')}",
         f"Buyer: {order.full_name} ({order.email}, {order.phone})",
+        f"Place: {order.shipping_address}, {order.city} {order.postal_code}",
         f"Total: Rs. {order.total_amount} -- {order.get_payment_method_display()}"
         f"{' (paid)' if order.is_paid else ' (due on delivery)'}",
     ]

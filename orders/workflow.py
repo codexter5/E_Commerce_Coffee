@@ -15,7 +15,7 @@ from notifications.services import (
 TRANSITIONS = {
     "PLACED": {"ACCEPTED": "SELLER", "CANCELLED": "SELLER"},
     "ACCEPTED": {"PREPARING": "SELLER", "CANCELLED": "SELLER"},
-    "PREPARING": {"READY_FOR_DELIVERY": "SELLER", "CANCELLED": "SELLER"},
+    "PREPARING": {"READY_FOR_DELIVERY": "SELLER", "ASSIGNED": "SELLER", "CANCELLED": "SELLER"},
     "READY_FOR_DELIVERY": {"ASSIGNED": "DELIVERY"},
     "ASSIGNED": {"PICKED_UP": "DELIVERY"},
     "PICKED_UP": {"OUT_FOR_DELIVERY": "DELIVERY"},
@@ -138,13 +138,16 @@ def send_status_update_notifications(order, new_status, message, actor):
         )
 
 
-def send_actor_confirmation(order, new_status, actor):
+def send_actor_confirmation(order, new_status, actor, message=None):
     """A short receipt-style confirmation sent back to whoever just performed
     the action (seller accepting, rider marking delivered, buyer confirming
     receipt, or an admin override), so they have written/WhatsApp proof the
     update actually went through -- not just a success banner that
-    disappears the moment they navigate away."""
-    message = ACTOR_CONFIRMATION_MESSAGES.get(
+    disappears the moment they navigate away. Pass `message` to override the
+    default wording (used when a seller directly hands an order to a chosen
+    rider, since "You claimed this delivery" would be the wrong phrasing for
+    them)."""
+    message = message or ACTOR_CONFIRMATION_MESSAGES.get(
         new_status, f"You updated this order to {new_status.replace('_', ' ').title()}."
     )
     transaction.on_commit(
@@ -153,7 +156,12 @@ def send_actor_confirmation(order, new_status, actor):
 
 
 @transaction.atomic
-def transition_order(order, actor, new_status):
+def transition_order(order, actor, new_status, assignee=None):
+    """Advance an order one step. `assignee` is only meaningful for the
+    PREPARING -> ASSIGNED jump: it lets a seller hand the order directly to a
+    specific delivery rider of their choosing, instead of the normal
+    READY_FOR_DELIVERY -> ASSIGNED path where any rider in the pool claims it
+    themselves. Everything else about the state machine is unchanged."""
     required_role = TRANSITIONS.get(order.status, {}).get(new_status)
     if not required_role or _role(actor) != required_role:
         raise ValueError("You are not allowed to make that order transition.")
@@ -163,10 +171,21 @@ def transition_order(order, actor, new_status):
         raise ValueError("Only the buyer can confirm this order.")
     if required_role == "DELIVERY" and new_status != "ASSIGNED" and order.delivery_person_id != actor.id:
         raise ValueError("Only the assigned delivery person can update this order.")
+
+    if assignee is not None and (new_status != "ASSIGNED" or required_role != "SELLER"):
+        raise ValueError("A delivery person can only be chosen when marking an order ready for delivery.")
+
     if new_status == "ASSIGNED":
         if order.delivery_person_id and order.delivery_person_id != actor.id:
             raise ValueError("This delivery is already assigned.")
-        order.delivery_person = actor
+        if assignee is not None:
+            if _role(assignee) != "DELIVERY":
+                raise ValueError("That account isn't a delivery rider.")
+            order.delivery_person = assignee
+        else:
+            order.delivery_person = actor
+
+    was_direct_assignment = new_status == "ASSIGNED" and order.status == "PREPARING"
     order.status = new_status
     timestamp_field = {
         "ACCEPTED": "accepted_at", "READY_FOR_DELIVERY": "ready_at",
@@ -177,8 +196,18 @@ def transition_order(order, actor, new_status):
     if timestamp_field:
         setattr(order, timestamp_field, timezone.now())
         update_fields.append(timestamp_field)
+    if was_direct_assignment and "ready_at" not in update_fields:
+        # it skipped the open READY_FOR_DELIVERY stage entirely, but it became
+        # ready and assigned in the same moment, so still record when that was
+        order.ready_at = timezone.now()
+        update_fields.append("ready_at")
     order.save(update_fields=update_fields)
+
     notification_type, message = NOTIFICATION_DETAILS[new_status]
+    assignee_message = (
+        "The seller assigned this delivery to you directly. Please prepare to pick it up."
+        if assignee is not None else None
+    )
     recipients = {order.user_id: order.user}
     if order.seller_id:
         recipients[order.seller_id] = order.seller
@@ -189,9 +218,16 @@ def transition_order(order, actor, new_status):
         recipients.update({profile.user_id: profile.user for profile in delivery_users})
     recipients.pop(actor.id, None)
     for recipient in recipients.values():
-        _notify(recipient, order, notification_type, message)
+        recipient_message = assignee_message if (assignee is not None and recipient.id == assignee.id) else message
+        _notify(recipient, order, notification_type, recipient_message)
     send_status_update_notifications(order, new_status, message, actor)
-    send_actor_confirmation(order, new_status, actor)
+    if assignee is not None:
+        transaction.on_commit(
+            lambda: send_status_update_to_recipient(assignee, order, new_status, assignee_message)
+        )
+        send_actor_confirmation(order, new_status, actor, message=f"You assigned this delivery to {assignee.username}.")
+    else:
+        send_actor_confirmation(order, new_status, actor)
     return order
 
 

@@ -56,19 +56,46 @@
                     {% if seller_next_steps %}
                         <p class="small text-muted">Move this order to the next stage of your workflow.</p>
                         {% for step in seller_next_steps %}
-                            <form method="post" class="mb-2">
+                            {% if step != 'ASSIGNED' %}
+                                <form method="post" class="mb-2">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="new_status" value="{{ step }}">
+                                    <button type="submit" class="btn w-100 {% if step == 'CANCELLED' %}btn-outline-danger{% else %}btn-dark{% endif %}"
+                                            onclick="return confirm('{% if step == 'CANCELLED' %}Cancel this order? This cannot be undone.{% else %}Move this order forward in the fulfillment process?{% endif %}');">
+                                        {% if step == 'ACCEPTED' %}<i class="bi bi-check-circle me-1"></i> Accept Order
+                                        {% elif step == 'PREPARING' %}<i class="bi bi-cup-hot me-1"></i> Start Preparing
+                                        {% elif step == 'READY_FOR_DELIVERY' %}<i class="bi bi-box-arrow-up me-1"></i> Mark Ready for Delivery
+                                        {% elif step == 'CANCELLED' %}<i class="bi bi-x-circle me-1"></i> Cancel Order
+                                        {% endif %}
+                                    </button>
+                                </form>
+                            {% endif %}
+                        {% endfor %}
+
+                        {% if 'ASSIGNED' in seller_next_steps %}
+                            <hr class="my-3">
+                            <p class="small text-muted mb-2">
+                                <i class="bi bi-person-check text-amber me-1"></i>
+                                Or skip the open pool and hand it directly to a rider you trust:
+                            </p>
+                            <form method="post">
                                 {% csrf_token %}
-                                <input type="hidden" name="new_status" value="{{ step }}">
-                                <button type="submit" class="btn w-100 {% if step == 'CANCELLED' %}btn-outline-danger{% else %}btn-dark{% endif %}"
-                                        onclick="return confirm('{% if step == 'CANCELLED' %}Cancel this order? This cannot be undone.{% else %}Move this order forward in the fulfillment process?{% endif %}');">
-                                    {% if step == 'ACCEPTED' %}<i class="bi bi-check-circle me-1"></i> Accept Order
-                                    {% elif step == 'PREPARING' %}<i class="bi bi-cup-hot me-1"></i> Start Preparing
-                                    {% elif step == 'READY_FOR_DELIVERY' %}<i class="bi bi-box-arrow-up me-1"></i> Mark Ready for Delivery
-                                    {% elif step == 'CANCELLED' %}<i class="bi bi-x-circle me-1"></i> Cancel Order
-                                    {% endif %}
+                                <input type="hidden" name="new_status" value="ASSIGNED">
+                                <select name="delivery_person_id" class="form-select mb-2" {% if not delivery_riders %}disabled{% endif %} required>
+                                    <option value="">Choose a delivery person…</option>
+                                    {% for rider in delivery_riders %}
+                                        <option value="{{ rider.id }}">{{ rider.username }} ({{ rider.active_deliveries }} active deliver{{ rider.active_deliveries|pluralize:"y,ies" }})</option>
+                                    {% endfor %}
+                                </select>
+                                {% if not delivery_riders %}
+                                    <div class="form-text text-danger mb-2">No delivery riders are registered yet.</div>
+                                {% endif %}
+                                <button type="submit" class="btn btn-outline-dark w-100" {% if not delivery_riders %}disabled{% endif %}
+                                        onclick="return confirm('Assign this order directly to the selected rider? It will no longer be open for other riders to claim.');">
+                                    <i class="bi bi-send-check me-1"></i> Assign to Selected Rider
                                 </button>
                             </form>
-                        {% endfor %}
+                        {% endif %}
                     {% else %}
                         <p class="small text-muted mb-0">
                             {% if order.status == 'CANCELLED' %}This order was cancelled.
