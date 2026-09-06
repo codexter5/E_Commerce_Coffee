@@ -14,6 +14,7 @@
                         <a href="{% url 'dashboard:products_list' %}" class="list-group-item list-group-item-action{% if active == 'products' %} active{% endif %}"><i class="bi bi-box-seam me-2"></i>Products</a>
                         <a href="{% url 'dashboard:categories_list' %}" class="list-group-item list-group-item-action{% if active == 'categories' %} active{% endif %}"><i class="bi bi-tags me-2"></i>Categories</a>
                         <a href="{% url 'dashboard:orders_list' %}" class="list-group-item list-group-item-action{% if active == 'orders' %} active{% endif %}"><i class="bi bi-receipt me-2"></i>Orders</a>
+                        <a href="{% url 'dashboard:notification_settings' %}" class="list-group-item list-group-item-action{% if active == 'notifications' %} active{% endif %}"><i class="bi bi-bell-fill me-2"></i>Notifications</a>
                     </div>
                 </div>
             </div>

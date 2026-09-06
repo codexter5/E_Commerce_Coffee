@@ -51,6 +51,15 @@ ORDER_NOTIFICATION_CHANNELS = os.getenv("ORDER_NOTIFICATION_CHANNELS", "")
 TWILIO_ACCOUNT_SID = os.getenv("TWILIO_ACCOUNT_SID", "")
 TWILIO_AUTH_TOKEN = os.getenv("TWILIO_AUTH_TOKEN", "")
 TWILIO_WHATSAPP_FROM = os.getenv("TWILIO_WHATSAPP_FROM", "")
+# If True (default), every ADMIN-role account gets emailed/WhatsApp'd for every
+# order event from checkout through delivery -- not just cancellations. Set to
+# False in .env if that becomes too noisy and you'd rather only hear about
+# cancellations, as before.
+ADMIN_NOTIFY_ALL_ORDER_EVENTS = os.getenv("ADMIN_NOTIFY_ALL_ORDER_EVENTS", "True").lower() == "true"
+# Prefixed onto phone numbers that don't already start with "+" before they're
+# sent to Twilio, since WhatsApp requires E.164 format (e.g. +9779812345678)
+# and most people just type a local 10-digit number at checkout or in their profile.
+DEFAULT_PHONE_COUNTRY_CODE = os.getenv("DEFAULT_PHONE_COUNTRY_CODE", "+977")
 if not DEBUG:
     SESSION_COOKIE_SECURE = CSRF_COOKIE_SECURE = True
     SECURE_SSL_REDIRECT = os.getenv("SECURE_SSL_REDIRECT", "True").lower() == "true"

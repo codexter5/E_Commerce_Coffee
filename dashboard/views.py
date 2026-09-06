@@ -8,12 +8,27 @@ from django.views.decorators.http import require_POST
 
 from accounts.models import Profile
 from notifications.models import Notification
+from notifications.services import notification_config_status, send_test_notification
 from orders.models import Order
-from orders.workflow import NOTIFICATION_DETAILS, TRANSITIONS, send_status_update_notifications, transition_order
+from orders.workflow import (
+    NOTIFICATION_DETAILS,
+    TRANSITIONS,
+    send_actor_confirmation,
+    send_status_update_notifications,
+    transition_order,
+)
 from products.models import Category, Product
 
 from .decorators import admin_required, delivery_required, seller_required
-from .forms import AdminUserCreateForm, AdminUserEditForm, CategoryForm, OrderStatusForm, ProductForm, SellerProductForm
+from .forms import (
+    AdminUserCreateForm,
+    AdminUserEditForm,
+    CategoryForm,
+    OrderStatusForm,
+    ProductForm,
+    SellerProductForm,
+    TestNotificationForm,
+)
 
 
 def _is_admin(user):
@@ -222,6 +237,9 @@ def order_detail(request, order_number):
                     # Email/WhatsApp to whoever EXTERNAL_NOTIFY_ON says should hear about
                     # this status externally -- the same precise routing transition_order() uses.
                     send_status_update_notifications(order, new_status, f"{message} (updated by admin)", request.user)
+                    # Plus a confirmation back to the admin who made the change --
+                    # same "proof it went through" receipt everyone else gets.
+                    send_actor_confirmation(order, new_status, request.user)
             messages.success(request, f"Order {order.order_number} status set to {order.get_status_display()}.")
         return redirect("dashboard:order_detail", order_number=order.order_number)
     return render(request, "dashboard/order_detail.html", {"order": order, "form": form, "active": "orders"})
@@ -435,4 +453,30 @@ def delivery_order_detail(request, order_number):
     return render(request, "dashboard/delivery_order_detail.html", {
         "order": order, "delivery_next_steps": delivery_next_steps,
         "active": "delivery_my_orders" if order.delivery_person_id else "delivery_available",
+    })
+
+
+# ===================================================================
+# Notification diagnostics -- lets an admin check whether email/WhatsApp
+# is actually configured correctly and send a real test message, without
+# needing shell/server-log access.
+# ===================================================================
+
+@admin_required
+def notification_settings(request):
+    status = notification_config_status()
+    initial = {"email": request.user.email, "phone": getattr(getattr(request.user, "profile", None), "phone", "")}
+    form = TestNotificationForm(request.POST or None, initial=initial)
+    results = None
+    if request.method == "POST" and form.is_valid():
+        results = send_test_notification(
+            email=form.cleaned_data.get("email") or None,
+            phone=form.cleaned_data.get("phone") or None,
+        )
+        if any("FAILED" in str(v) or k == "error" for k, v in results.items()):
+            messages.error(request, "The test send finished, but at least one channel failed -- see details below.")
+        else:
+            messages.success(request, "Test message sent -- check the results below and your inbox/WhatsApp.")
+    return render(request, "dashboard/notification_settings.html", {
+        "status": status, "form": form, "results": results, "active": "notifications",
     })

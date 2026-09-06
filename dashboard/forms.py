@@ -107,3 +107,21 @@ class OrderStatusForm(forms.Form):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         apply_bootstrap_styles(self)
+
+
+class TestNotificationForm(forms.Form):
+    """Used on the admin dashboard's Notifications page to send a real test
+    email/WhatsApp message using whatever's currently in .env."""
+
+    email = forms.EmailField(required=False, label="Email address")
+    phone = forms.CharField(required=False, label="Phone number", help_text="Local (98...) or international (+977...).")
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        apply_bootstrap_styles(self)
+
+    def clean(self):
+        cleaned = super().clean()
+        if not cleaned.get("email") and not cleaned.get("phone"):
+            raise forms.ValidationError("Enter at least an email address or a phone number to send a test to.")
+        return cleaned

@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.contrib.auth.models import User
 from django.db import transaction
 from django.utils import timezone
@@ -35,24 +36,48 @@ NOTIFICATION_DETAILS = {
 }
 
 # Every status change always gets an in-app (bell) notification for everyone
-# involved with the order. Email/WhatsApp is more precisely targeted so people
-# aren't messaged about things they don't need to act on:
-#   - the buyer cares about every step of their own order, so they're always included
-#   - the seller only needs pinging for events that need their attention or
-#     confirm a sale (a new order, a cancellation, a completed sale)
-#   - delivery riders (as a pool, not just whoever's assigned) only need
-#     pinging when a fresh job becomes available to claim
-#   - admins only get externally notified for the one event worth escalating: a cancellation
+# involved with the order. Email/WhatsApp is more precisely targeted, but on
+# the "give people proof things went right" principle, it now covers the
+# whole journey for buyer, seller, and delivery rider -- not just the one
+# stage each of them happens to trigger themselves:
+#   - the buyer cares about every step of their own order
+#   - the seller gets pinged for a new sale and every stage after they've
+#     handed it off to delivery, so they can see it through to completion
+#   - the specific assigned delivery rider gets the closing "buyer confirmed
+#     receipt" message, so they know their part of the job is fully done
+#   - the delivery *pool* (everyone with that role, not just whoever's
+#     assigned) only gets pinged when a fresh job becomes available to claim
+#   - admins: see ADMIN_NOTIFY_ALL_ORDER_EVENTS below -- by default they're
+#     added to every stage too. CANCELLED always escalates to admins
+#     regardless of that setting, since it's worth knowing about either way.
+# On top of all this, whoever actually performed an action (seller accepting,
+# rider marking delivered, buyer confirming receipt...) gets their own separate
+# confirmation message -- see send_actor_confirmation() below -- so there's a
+# written/WhatsApp record that their action actually went through.
 EXTERNAL_NOTIFY_ON = {
     "ACCEPTED": {"buyer"},
     "PREPARING": {"buyer"},
-    "READY_FOR_DELIVERY": {"buyer", "delivery_pool"},
-    "ASSIGNED": {"buyer"},
-    "PICKED_UP": {"buyer"},
-    "OUT_FOR_DELIVERY": {"buyer"},
+    "READY_FOR_DELIVERY": {"buyer", "seller", "delivery_pool"},
+    "ASSIGNED": {"buyer", "seller"},
+    "PICKED_UP": {"buyer", "seller"},
+    "OUT_FOR_DELIVERY": {"buyer", "seller"},
     "DELIVERED": {"buyer", "seller"},
-    "COMPLETED": {"buyer", "seller"},
+    "COMPLETED": {"buyer", "seller", "delivery_person"},
     "CANCELLED": {"buyer", "seller", "admin"},
+}
+
+# Sent back to whoever just performed the action -- a receipt confirming it
+# actually went through, distinct from the "FYI" message everyone else gets.
+ACTOR_CONFIRMATION_MESSAGES = {
+    "ACCEPTED": "You accepted this order.",
+    "PREPARING": "You marked this order as being prepared.",
+    "READY_FOR_DELIVERY": "You marked this order ready for delivery.",
+    "ASSIGNED": "You claimed this delivery.",
+    "PICKED_UP": "You marked this order picked up.",
+    "OUT_FOR_DELIVERY": "You marked this order out for delivery.",
+    "DELIVERED": "You marked this order delivered.",
+    "COMPLETED": "You confirmed receipt of this order.",
+    "CANCELLED": "You cancelled this order.",
 }
 
 
@@ -70,34 +95,61 @@ def _notify(recipient, order, notification_type, message):
         )
 
 
+def _admin_notify_enabled():
+    return getattr(settings, "ADMIN_NOTIFY_ALL_ORDER_EVENTS", True)
+
+
+def _admin_users(exclude_id=None):
+    qs = User.objects.filter(profile__role=Profile.Role.ADMIN).select_related("profile")
+    if exclude_id:
+        qs = qs.exclude(pk=exclude_id)
+    return list(qs)
+
+
 def _external_recipients_for(order, new_status, actor):
     """Resolve EXTERNAL_NOTIFY_ON's role labels into actual User objects for
-    this specific order, excluding whoever just performed the action (no
-    point emailing/WhatsApp-ing someone about their own click)."""
-    targets = EXTERNAL_NOTIFY_ON.get(new_status, set())
+    this specific order, excluding whoever just performed the action (they
+    get send_actor_confirmation() instead of this "FYI" message)."""
+    targets = set(EXTERNAL_NOTIFY_ON.get(new_status, set()))
+    if _admin_notify_enabled():
+        targets.add("admin")
     recipients = []
     if "buyer" in targets and order.user_id and order.user_id != actor.id:
         recipients.append(order.user)
     if "seller" in targets and order.seller_id and order.seller_id != actor.id:
         recipients.append(order.seller)
+    if "delivery_person" in targets and order.delivery_person_id and order.delivery_person_id != actor.id:
+        recipients.append(order.delivery_person)
     if "delivery_pool" in targets:
         recipients.extend(
             User.objects.filter(profile__role=Profile.Role.DELIVERY).exclude(pk=actor.id).select_related("profile")
         )
     if "admin" in targets:
-        recipients.extend(
-            User.objects.filter(profile__role=Profile.Role.ADMIN).exclude(pk=actor.id).select_related("profile")
-        )
+        recipients.extend(_admin_users(exclude_id=actor.id))
     return recipients
 
 
 def send_status_update_notifications(order, new_status, message, actor):
-    """Queue email/WhatsApp for every recipient EXTERNAL_NOTIFY_ON says should
-    hear about this status externally (not just via the in-app bell)."""
+    """Queue email/WhatsApp for every recipient EXTERNAL_NOTIFY_ON (plus the
+    admin toggle) says should hear about this status as an FYI."""
     for recipient in _external_recipients_for(order, new_status, actor):
         transaction.on_commit(
             lambda recipient=recipient: send_status_update_to_recipient(recipient, order, new_status, message)
         )
+
+
+def send_actor_confirmation(order, new_status, actor):
+    """A short receipt-style confirmation sent back to whoever just performed
+    the action (seller accepting, rider marking delivered, buyer confirming
+    receipt, or an admin override), so they have written/WhatsApp proof the
+    update actually went through -- not just a success banner that
+    disappears the moment they navigate away."""
+    message = ACTOR_CONFIRMATION_MESSAGES.get(
+        new_status, f"You updated this order to {new_status.replace('_', ' ').title()}."
+    )
+    transaction.on_commit(
+        lambda: send_status_update_to_recipient(actor, order, new_status, message)
+    )
 
 
 @transaction.atomic
@@ -139,16 +191,26 @@ def transition_order(order, actor, new_status):
     for recipient in recipients.values():
         _notify(recipient, order, notification_type, message)
     send_status_update_notifications(order, new_status, message, actor)
+    send_actor_confirmation(order, new_status, actor)
     return order
 
 
 def notify_order_placed(order):
     """The very first notification of an order's life: fired the moment
     checkout completes ("the product has been checked out"). The buyer gets
-    an in-app + email/WhatsApp confirmation; the seller gets an in-app +
-    email/WhatsApp alert that a sale is waiting for them."""
+    an in-app + email/WhatsApp confirmation (their receipt); the seller gets
+    an in-app + email/WhatsApp alert that a sale is waiting for them; and --
+    if ADMIN_NOTIFY_ALL_ORDER_EVENTS is on (the default) -- every admin gets
+    the same, so the owner can track it start to finish."""
     if order.seller:
         _notify(order.seller, order, Notification.Type.ORDER_PLACED, "A new order is waiting for your review.")
+    admins = _admin_users(exclude_id=order.user_id) if _admin_notify_enabled() else []
+    for admin_user in admins:
+        _notify(admin_user, order, Notification.Type.ORDER_PLACED, f"New order {order.order_number} was placed.")
     transaction.on_commit(lambda: send_order_confirmation_notification(order))
     if order.seller_id:
         transaction.on_commit(lambda: send_seller_new_order_notification(order))
+    for admin_user in admins:
+        transaction.on_commit(
+            lambda admin_user=admin_user: send_status_update_to_recipient(admin_user, order, "PLACED", "New order placed.")
+        )
