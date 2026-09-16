@@ -1,5 +1,8 @@
 {% extends 'base.html' %}
 
+{% block title %}{% if search_query %}Search results for "{{ search_query }}"{% elif category %}{{ category.name }} - Shop{% else %}Shop All Coffee & Brewing Gear{% endif %} - BrewMart{% endblock %}
+{% block meta_description %}{% if search_query %}Search results for "{{ search_query }}" — specialty coffee beans and brewing equipment at BrewMart.{% elif category %}Shop {{ category.name }} at BrewMart — specialty-grade coffee and brewing equipment.{% else %}Browse BrewMart's full catalog of specialty-grade coffee beans and artisan brewing equipment.{% endif %}{% endblock %}
+
 {% block content %}
     <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3 pb-3 border-bottom">
         <div class="page-intro mb-0">

@@ -1,4 +1,19 @@
 {% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ product.name }} - BrewMart{% endblock %}
+{% block meta_description %}{{ product.description|truncatewords:30 }}{% endblock %}
+{% block og_title %}{{ product.name }} - BrewMart{% endblock %}
+{% block og_description %}{{ product.description|truncatewords:30 }}{% endblock %}
+{% block og_image %}
+    <meta property="og:type" content="product">
+    {% if product.image %}<meta property="og:image" content="{{ request.scheme }}://{{ request.get_host }}{{ product.image.url }}">{% endif %}
+    <meta property="product:price:amount" content="{{ product.current_price }}">
+    <meta property="product:price:currency" content="NPR">
+{% endblock %}
+{% block structured_data %}
+    <script type="application/ld+json">{{ product_json_ld|safe }}</script>
+{% endblock %}
 
 {% block content %}
     <nav aria-label="breadcrumb">
@@ -101,6 +116,22 @@
             </div>
         </div>
     </div>
+
+    {% if related_products %}
+        <section class="my-5 pt-4 border-top">
+            <div class="mb-4">
+                <h3>{% if frequently_bought_together %}Customers Also Bought{% else %}You May Also Like{% endif %}</h3>
+                <p class="text-muted small mb-0">
+                    {% if frequently_bought_together %}Based on what other buyers ordered alongside this{% else %}More from {{ product.category }}{% endif %}
+                </p>
+            </div>
+            <div class="row g-4">
+                {% for product in related_products %}
+                    {% include 'products/card.html' %}
+                {% endfor %}
+            </div>
+        </section>
+    {% endif %}
 
     <!-- Customer Reviews Section -->
     <section class="my-5 pt-4 border-top">

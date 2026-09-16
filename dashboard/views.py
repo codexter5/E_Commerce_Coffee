@@ -1,15 +1,19 @@
+from datetime import timedelta
+
 from django.contrib import messages
 from django.contrib.auth.models import User
 from django.core.paginator import Paginator
 from django.db import transaction
-from django.db.models import Count, Q, Sum
+from django.db.models import Count, DecimalField, F, Q, Sum
+from django.db.models.functions import Coalesce, TruncDate
 from django.shortcuts import get_object_or_404, redirect, render
+from django.utils import timezone
 from django.views.decorators.http import require_POST
 
 from accounts.models import Profile
 from notifications.models import Notification
 from notifications.services import notification_config_status, send_test_notification
-from orders.models import Order
+from orders.models import Order, OrderItem
 from orders.workflow import (
     NOTIFICATION_DETAILS,
     TRANSITIONS,
@@ -522,4 +526,78 @@ def delivery_notification_test(request):
     channels = notification_config_status()["channels"]
     return render(request, "dashboard/delivery_notification_test.html", {
         "form": form, "results": results, "channels": channels, "active": "delivery_notifications",
+    })
+
+
+# ===================================================================
+# Analytics -- revenue trend, order status breakdown, and top-selling
+# products, drawn from real order history over the last 30 days.
+# ===================================================================
+
+@admin_required
+def analytics(request):
+    days_back = 30
+    today = timezone.localdate()
+    since = today - timedelta(days=days_back - 1)
+
+    revenue_by_day = (
+        Order.objects.filter(is_paid=True, created_at__date__gte=since)
+        .annotate(day=TruncDate("created_at"))
+        .values("day")
+        .annotate(total=Sum("total_amount"))
+    )
+    day_totals = {row["day"]: float(row["total"]) for row in revenue_by_day}
+    all_days = [since + timedelta(days=i) for i in range(days_back)]
+    revenue_series = [{"date": d.strftime("%b %d"), "amount": day_totals.get(d, 0)} for d in all_days]
+    total_revenue_30d = sum(day_totals.values())
+
+    orders_by_day = (
+        Order.objects.filter(created_at__date__gte=since)
+        .annotate(day=TruncDate("created_at"))
+        .values("day")
+        .annotate(count=Count("id"))
+    )
+    order_day_counts = {row["day"]: row["count"] for row in orders_by_day}
+    orders_series = [{"date": d.strftime("%b %d"), "count": order_day_counts.get(d, 0)} for d in all_days]
+
+    status_labels = dict(Order.Status.choices)
+    status_breakdown = [
+        {"label": status_labels.get(row["status"], row["status"]), "count": row["count"]}
+        for row in Order.objects.values("status").annotate(count=Count("id")).order_by("-count")
+    ]
+
+    top_products = (
+        OrderItem.objects.values("product__name")
+        .annotate(
+            units_sold=Sum("quantity"),
+            revenue=Coalesce(Sum(F("price") * F("quantity")), 0, output_field=DecimalField()),
+        )
+        .order_by("-units_sold")[:8]
+    )
+
+    new_users_by_day = (
+        User.objects.filter(date_joined__date__gte=since)
+        .annotate(day=TruncDate("date_joined"))
+        .values("day")
+        .annotate(count=Count("id"))
+    )
+    user_day_counts = {row["day"]: row["count"] for row in new_users_by_day}
+    new_users_30d = sum(user_day_counts.values())
+
+    payment_method_breakdown = [
+        {"label": dict(Order.PaymentMethod.choices).get(row["payment_method"], row["payment_method"]), "count": row["count"]}
+        for row in Order.objects.values("payment_method").annotate(count=Count("id")).order_by("-count")
+    ]
+
+    return render(request, "dashboard/analytics.html", {
+        "revenue_series": revenue_series,
+        "orders_series": orders_series,
+        "status_breakdown": status_breakdown,
+        "top_products": list(top_products),
+        "payment_method_breakdown": payment_method_breakdown,
+        "total_revenue_30d": total_revenue_30d,
+        "total_orders_30d": sum(order_day_counts.values()),
+        "new_users_30d": new_users_30d,
+        "days_back": days_back,
+        "active": "analytics",
     })

@@ -12,7 +12,7 @@ CSRF_TRUSTED_ORIGINS = [u.strip() for u in os.getenv("CSRF_TRUSTED_ORIGINS", "")
 
 INSTALLED_APPS = [
     "django.contrib.admin", "django.contrib.auth", "django.contrib.contenttypes", "django.contrib.sessions",
-    "django.contrib.messages", "django.contrib.staticfiles", "accounts", "products", "cart", "wishlist", "orders", "notifications", "reviews", "core", "dashboard",
+    "django.contrib.messages", "django.contrib.staticfiles", "django.contrib.sitemaps", "accounts", "products", "cart", "wishlist", "orders", "notifications", "reviews", "core", "dashboard",
 ]
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware", "whitenoise.middleware.WhiteNoiseMiddleware",
@@ -22,7 +22,7 @@ MIDDLEWARE = [
 ]
 ROOT_URLCONF = "config.urls"
 TEMPLATES = [{"BACKEND": "django.template.backends.django.DjangoTemplates", "DIRS": [BASE_DIR / "templates"], "APP_DIRS": True,
-              "OPTIONS": {"context_processors": ["django.template.context_processors.request", "django.contrib.auth.context_processors.auth", "django.contrib.messages.context_processors.messages", "cart.context_processors.cart_summary", "wishlist.context_processors.wishlist_summary", "notifications.context_processors.notification_summary"]}}]
+              "OPTIONS": {"context_processors": ["django.template.context_processors.request", "django.contrib.auth.context_processors.auth", "django.contrib.messages.context_processors.messages", "cart.context_processors.cart_summary", "wishlist.context_processors.wishlist_summary", "notifications.context_processors.notification_summary", "core.context_processors.analytics"]}}]
 WSGI_APPLICATION = "config.wsgi.application"
 
 db_url = os.getenv("DATABASE_URL", "")
@@ -60,6 +60,10 @@ ADMIN_NOTIFY_ALL_ORDER_EVENTS = os.getenv("ADMIN_NOTIFY_ALL_ORDER_EVENTS", "True
 # sent to Twilio, since WhatsApp requires E.164 format (e.g. +9779812345678)
 # and most people just type a local 10-digit number at checkout or in their profile.
 DEFAULT_PHONE_COUNTRY_CODE = os.getenv("DEFAULT_PHONE_COUNTRY_CODE", "+977")
+
+# Optional Google Analytics 4 measurement ID (e.g. "G-XXXXXXXXXX"). Leave blank
+# to ship no tracking code at all -- nothing renders in base.html until set.
+GOOGLE_ANALYTICS_ID = os.getenv("GOOGLE_ANALYTICS_ID", "")
 if not DEBUG:
     SESSION_COOKIE_SECURE = CSRF_COOKIE_SECURE = True
     SECURE_SSL_REDIRECT = os.getenv("SECURE_SSL_REDIRECT", "True").lower() == "true"

@@ -1,3 +1,6 @@
+{% if form.non_field_errors %}
+    <div class="alert alert-danger small py-2 px-3">{{ form.non_field_errors|join:" " }}</div>
+{% endif %}
 {% for field in form %}
     <div class="mb-3{% if field.field.widget.input_type == 'checkbox' %} form-check{% endif %}">
         {% if field.field.widget.input_type == 'checkbox' %}
