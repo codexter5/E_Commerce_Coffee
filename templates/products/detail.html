@@ -88,6 +88,13 @@
                         </button>
                     </form>
                 {% endif %}
+                {% load whatsapp %}
+                {% whatsapp_link product.seller.profile.phone whatsapp_message as seller_whatsapp_href %}
+                {% if seller_whatsapp_href %}
+                    <a href="{{ seller_whatsapp_href }}" target="_blank" rel="noopener" class="btn btn-whatsapp btn-lg">
+                        <i class="bi bi-whatsapp me-1"></i> Ask the Seller
+                    </a>
+                {% endif %}
             </div>
 
             <!-- Trust Highlights -->

@@ -315,5 +315,13 @@
         })();
     </script>
     {% endif %}
+
+    {% load whatsapp %}
+    {% if STORE_WHATSAPP_NUMBER %}
+        {% whatsapp_link STORE_WHATSAPP_NUMBER whatsapp_message|default:"Hi, I have a question about BrewMart." as whatsapp_href %}
+        <a href="{{ whatsapp_href }}" target="_blank" rel="noopener" class="whatsapp-float-btn" aria-label="Chat with us on WhatsApp" title="Chat with us on WhatsApp">
+            <i class="bi bi-whatsapp"></i>
+        </a>
+    {% endif %}
 </body>
 </html>

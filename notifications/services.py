@@ -1,4 +1,5 @@
 import base64
+import json
 import logging
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlencode
@@ -45,11 +46,8 @@ def _twilio_from():
     return sender
 
 
-def _send_whatsapp_verbose(phone, message):
-    """Does the actual Twilio call and returns (success, detail) instead of
-    only logging -- used by the notification test tool so a real person can
-    see exactly why a message did or didn't go through, without needing
-    server log access."""
+def _send_whatsapp_via_twilio(phone, message):
+    """Does the actual Twilio call and returns (success, detail)."""
     sid = getattr(settings, "TWILIO_ACCOUNT_SID", "").strip()
     token = getattr(settings, "TWILIO_AUTH_TOKEN", "").strip()
     sender = _twilio_from()
@@ -78,6 +76,60 @@ def _send_whatsapp_verbose(phone, message):
         return False, f"Twilio rejected the request (HTTP {error.code}): {detail}"
     except (URLError, TimeoutError) as error:
         return False, f"Could not reach Twilio: {error}"
+
+
+def _meta_api_url():
+    version = (getattr(settings, "META_WHATSAPP_API_VERSION", "") or "v20.0").strip()
+    phone_number_id = getattr(settings, "META_WHATSAPP_PHONE_NUMBER_ID", "").strip()
+    return f"https://graph.facebook.com/{version}/{phone_number_id}/messages"
+
+
+def _send_whatsapp_via_meta(phone, message):
+    """Sends via Meta's own WhatsApp Cloud API directly -- no Twilio, no
+    third-party middleman, and no per-message cost on the free tier. Returns
+    (success, detail) the same way the Twilio path does."""
+    token = getattr(settings, "META_WHATSAPP_TOKEN", "").strip()
+    phone_number_id = getattr(settings, "META_WHATSAPP_PHONE_NUMBER_ID", "").strip()
+    normalized = _normalize_phone(phone)
+
+    if not token:
+        return False, "META_WHATSAPP_TOKEN is not set in .env."
+    if not phone_number_id:
+        return False, "META_WHATSAPP_PHONE_NUMBER_ID is not set in .env."
+    if not normalized:
+        return False, "No phone number was given."
+
+    payload = json.dumps({
+        "messaging_product": "whatsapp",
+        "to": normalized.lstrip("+"),
+        "type": "text",
+        "text": {"body": message},
+    }).encode()
+    request = Request(
+        _meta_api_url(),
+        data=payload,
+        headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"},
+        method="POST",
+    )
+    try:
+        with urlopen(request, timeout=10) as response:
+            return True, f"Sent to {normalized} (Meta HTTP {response.status})."
+    except HTTPError as error:
+        detail = error.read().decode(errors="replace")[:400]
+        return False, f"Meta rejected the request (HTTP {error.code}): {detail}"
+    except (URLError, TimeoutError) as error:
+        return False, f"Could not reach Meta: {error}"
+
+
+def _send_whatsapp_verbose(phone, message):
+    """Routes to whichever provider WHATSAPP_PROVIDER selects ("twilio" or
+    "meta"), returning (success, detail) either way -- used by the
+    notification test tool so a real person can see exactly why a message
+    did or didn't go through, without needing server log access."""
+    provider = getattr(settings, "WHATSAPP_PROVIDER", "twilio").strip().lower()
+    if provider == "meta":
+        return _send_whatsapp_via_meta(phone, message)
+    return _send_whatsapp_via_twilio(phone, message)
 
 
 def _send_whatsapp(phone, message):
@@ -198,6 +250,7 @@ def notification_config_status():
     channels = _channels()
     email_backend = getattr(settings, "EMAIL_BACKEND", "")
     is_console_backend = email_backend.endswith("console.EmailBackend")
+    provider = getattr(settings, "WHATSAPP_PROVIDER", "twilio").strip().lower()
     return {
         "channels": sorted(channels) or None,
         "email": {
@@ -211,10 +264,16 @@ def notification_config_status():
         },
         "whatsapp": {
             "enabled": "whatsapp" in channels,
+            "provider": provider,
+            # Twilio
             "sid_set": bool(getattr(settings, "TWILIO_ACCOUNT_SID", "")),
             "token_set": bool(getattr(settings, "TWILIO_AUTH_TOKEN", "")),
             "from_set": bool(getattr(settings, "TWILIO_WHATSAPP_FROM", "")),
             "from_number": _twilio_from(),
+            # Meta
+            "meta_token_set": bool(getattr(settings, "META_WHATSAPP_TOKEN", "")),
+            "meta_phone_number_id_set": bool(getattr(settings, "META_WHATSAPP_PHONE_NUMBER_ID", "")),
+            "meta_api_version": getattr(settings, "META_WHATSAPP_API_VERSION", ""),
             "default_country_code": getattr(settings, "DEFAULT_PHONE_COUNTRY_CODE", ""),
         },
         "admin_notify_all_stages": getattr(settings, "ADMIN_NOTIFY_ALL_ORDER_EVENTS", True),

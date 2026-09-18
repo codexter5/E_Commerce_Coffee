@@ -30,6 +30,13 @@
                             {% endif %}
                         </dd>
                     </dl>
+                    {% load whatsapp %}
+                    {% whatsapp_link order.phone "Hi "|add:order.full_name|add:", this is your BrewMart delivery rider regarding order "|add:order.order_number as buyer_whatsapp_href %}
+                    {% if buyer_whatsapp_href %}
+                        <a href="{{ buyer_whatsapp_href }}" target="_blank" rel="noopener" class="btn btn-whatsapp w-100 mt-3">
+                            <i class="bi bi-whatsapp me-1"></i> Message Buyer on WhatsApp
+                        </a>
+                    {% endif %}
                 </div>
             </div>
 

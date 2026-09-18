@@ -48,6 +48,15 @@
                                     <span class="card-price fs-3">{{ order.total_amount }}</span>
                                 </div>
                             </div>
+                            {% load whatsapp %}
+                            {% whatsapp_link STORE_WHATSAPP_NUMBER "Hi, I have a question about order "|add:order.order_number as support_whatsapp_href %}
+                            {% if support_whatsapp_href %}
+                                <div class="mt-3 pt-3 border-top text-end">
+                                    <a href="{{ support_whatsapp_href }}" target="_blank" rel="noopener" class="btn btn-whatsapp btn-sm">
+                                        <i class="bi bi-whatsapp me-1"></i> Message Support
+                                    </a>
+                                </div>
+                            {% endif %}
                         </div>
                     </div>
                 </div>

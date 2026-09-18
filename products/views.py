@@ -20,6 +20,7 @@ class ProductDetailView(DetailView):
         context = super().get_context_data(**kwargs)
         product = self.object
         context["product_json_ld"] = product_json_ld(self.request, product)
+        context["whatsapp_message"] = f"Hi, I'm interested in {product.name} ({self.request.build_absolute_uri()})."
         frequently_bought = get_frequently_bought_together(product, limit=4)
         context["frequently_bought_together"] = frequently_bought
         # Prefer real "customers also bought" signal; fall back to same-category

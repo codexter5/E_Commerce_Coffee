@@ -1,8 +1,12 @@
 from django.conf import settings
 
 
-def analytics(request):
-    """Makes GOOGLE_ANALYTICS_ID available to base.html so the gtag.js snippet
-    only renders when a real measurement ID has been configured -- nothing
-    fires (and no broken/fake tracking code ships) until it's set."""
-    return {"GOOGLE_ANALYTICS_ID": getattr(settings, "GOOGLE_ANALYTICS_ID", "")}
+def site_settings(request):
+    """Makes a few optional site-wide settings available to every template:
+    GOOGLE_ANALYTICS_ID (gtag.js only renders once a real measurement ID is
+    configured) and STORE_WHATSAPP_NUMBER (the floating "Chat with us" button
+    only renders once a real number is configured)."""
+    return {
+        "GOOGLE_ANALYTICS_ID": getattr(settings, "GOOGLE_ANALYTICS_ID", ""),
+        "STORE_WHATSAPP_NUMBER": getattr(settings, "STORE_WHATSAPP_NUMBER", ""),
+    }

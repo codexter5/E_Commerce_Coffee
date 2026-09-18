@@ -1,6 +1,8 @@
 # BrewMart Django E-commerce
 
 ## Install
+For the complete Windows-first setup, HTTP/HTTPS, database, production, and troubleshooting instructions, see [docs/RUN_PROJECT.md](docs/RUN_PROJECT.md).
+
 1. Create and activate a virtual environment.
 2. Run `pip install -r requirements.txt`.
 3. Copy `.env.example` to `.env` and set a secure `SECRET_KEY` and PostgreSQL `DATABASE_URL`.

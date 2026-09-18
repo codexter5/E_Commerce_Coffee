@@ -41,13 +41,25 @@
                     </ul>
 
                     <hr>
-                    <div class="small text-muted text-uppercase fw-bold mb-1">WhatsApp (Twilio)</div>
-                    <ul class="list-unstyled small mb-0">
-                        <li>Account SID set: {% if status.whatsapp.sid_set %}<span class="badge badge-success">yes</span>{% else %}<span class="badge badge-danger">no</span>{% endif %}</li>
-                        <li>Auth token set: {% if status.whatsapp.token_set %}<span class="badge badge-success">yes</span>{% else %}<span class="badge badge-danger">no</span>{% endif %}</li>
-                        <li>Sender number: <code>{{ status.whatsapp.from_number|default:"—" }}</code></li>
-                        <li>Default country code: <code>{{ status.whatsapp.default_country_code|default:"—" }}</code></li>
-                    </ul>
+                    <div class="small text-muted text-uppercase fw-bold mb-1">
+                        WhatsApp <span class="badge badge-muted">{{ status.whatsapp.provider }}</span>
+                    </div>
+                    {% if status.whatsapp.provider == "meta" %}
+                        <ul class="list-unstyled small mb-0">
+                            <li>Access token set: {% if status.whatsapp.meta_token_set %}<span class="badge badge-success">yes</span>{% else %}<span class="badge badge-danger">no</span>{% endif %}</li>
+                            <li>Phone number ID set: {% if status.whatsapp.meta_phone_number_id_set %}<span class="badge badge-success">yes</span>{% else %}<span class="badge badge-danger">no</span>{% endif %}</li>
+                            <li>API version: <code>{{ status.whatsapp.meta_api_version|default:"—" }}</code></li>
+                            <li>Default country code: <code>{{ status.whatsapp.default_country_code|default:"—" }}</code></li>
+                        </ul>
+                    {% else %}
+                        <ul class="list-unstyled small mb-0">
+                            <li>Account SID set: {% if status.whatsapp.sid_set %}<span class="badge badge-success">yes</span>{% else %}<span class="badge badge-danger">no</span>{% endif %}</li>
+                            <li>Auth token set: {% if status.whatsapp.token_set %}<span class="badge badge-success">yes</span>{% else %}<span class="badge badge-danger">no</span>{% endif %}</li>
+                            <li>Sender number: <code>{{ status.whatsapp.from_number|default:"—" }}</code></li>
+                            <li>Default country code: <code>{{ status.whatsapp.default_country_code|default:"—" }}</code></li>
+                        </ul>
+                    {% endif %}
+                    <div class="form-text mt-1">Switch providers with <code>WHATSAPP_PROVIDER=twilio</code> or <code>WHATSAPP_PROVIDER=meta</code> in <code>.env</code>.</div>
 
                     <hr>
                     <div class="small">
@@ -60,9 +72,16 @@
             <div class="card border-0 bg-light">
                 <div class="card-body p-3 small text-muted">
                     <i class="bi bi-info-circle-fill text-amber me-1"></i>
-                    <strong>Common WhatsApp gotcha:</strong> Twilio's free sandbox only delivers to numbers that have joined it —
-                    send the sandbox's "join &lt;code&gt;" message from that WhatsApp number first, or your test will fail with
-                    an "not a valid outbound number" / "channel not opted-in" error below.
+                    <strong>Common WhatsApp gotcha:</strong>
+                    {% if status.whatsapp.provider == "meta" %}
+                        while your Meta app is in development mode, it can only message numbers added to the
+                        "recipient list" on the app's WhatsApp > API Setup page — add your test number there first,
+                        or your test will fail with a recipient-not-allowed error below.
+                    {% else %}
+                        Twilio's free sandbox only delivers to numbers that have joined it —
+                        send the sandbox's "join &lt;code&gt;" message from that WhatsApp number first, or your test will fail with
+                        an "not a valid outbound number" / "channel not opted-in" error below.
+                    {% endif %}
                 </div>
             </div>
         </div>

@@ -6,3 +6,4 @@ media/*
 !media/.gitkeep
 staticfiles/
 .venv/
+certs/

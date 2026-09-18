@@ -53,6 +53,13 @@
             <a href="{% url 'products:list' %}" class="btn btn-outline-dark btn-lg">
                 <i class="bi bi-bag me-1"></i> Continue Shopping
             </a>
+            {% load whatsapp %}
+            {% whatsapp_link STORE_WHATSAPP_NUMBER "Hi, I have a question about order "|add:order.order_number as support_whatsapp_href %}
+            {% if support_whatsapp_href %}
+                <a href="{{ support_whatsapp_href }}" target="_blank" rel="noopener" class="btn btn-whatsapp btn-lg">
+                    <i class="bi bi-whatsapp me-1"></i> Message Support About This Order
+                </a>
+            {% endif %}
         </div>
     </div>
 {% endblock %}
