@@ -22,7 +22,7 @@ MIDDLEWARE = [
 ]
 ROOT_URLCONF = "config.urls"
 TEMPLATES = [{"BACKEND": "django.template.backends.django.DjangoTemplates", "DIRS": [BASE_DIR / "templates"], "APP_DIRS": True,
-              "OPTIONS": {"context_processors": ["django.template.context_processors.request", "django.contrib.auth.context_processors.auth", "django.contrib.messages.context_processors.messages", "cart.context_processors.cart_summary", "wishlist.context_processors.wishlist_summary", "notifications.context_processors.notification_summary", "core.context_processors.site_settings"]}}]
+              "OPTIONS": {"context_processors": ["django.template.context_processors.request", "django.contrib.auth.context_processors.auth", "django.contrib.messages.context_processors.messages", "cart.context_processors.cart_summary", "wishlist.context_processors.wishlist_summary", "notifications.context_processors.notification_summary", "core.context_processors.site_settings", "core.context_processors.pending_ecommerce_event"]}}]
 WSGI_APPLICATION = "config.wsgi.application"
 
 db_url = os.getenv("DATABASE_URL", "")
@@ -84,6 +84,18 @@ GOOGLE_ANALYTICS_ID = os.getenv("GOOGLE_ANALYTICS_ID", "")
 # or +E.164 -- normalized the same way as DEFAULT_PHONE_COUNTRY_CODE above).
 # Leave blank to hide the button entirely.
 STORE_WHATSAPP_NUMBER = os.getenv("STORE_WHATSAPP_NUMBER", "")
+
+# Optional Meta/Facebook Pixel ID (e.g. "1234567890123456"). Leave blank to
+# ship no pixel code at all -- nothing renders in base.html until set. Same
+# on/off pattern as GOOGLE_ANALYTICS_ID above.
+FACEBOOK_PIXEL_ID = os.getenv("FACEBOOK_PIXEL_ID", "")
+
+# Optional Google AdSense publisher ID (e.g. "ca-pub-1234567890123456"). Leave
+# blank to ship no AdSense script and no ad slots -- nothing renders until
+# set. This is a demo-site integration: the ad slot IDs used in
+# templates/partials/ad_slot.html are placeholders and should be replaced
+# with real slot IDs from the AdSense dashboard before going live.
+GOOGLE_ADSENSE_CLIENT_ID = os.getenv("GOOGLE_ADSENSE_CLIENT_ID", "")
 if not DEBUG:
     SESSION_COOKIE_SECURE = CSRF_COOKIE_SECURE = True
     SECURE_SSL_REDIRECT = os.getenv("SECURE_SSL_REDIRECT", "True").lower() == "true"

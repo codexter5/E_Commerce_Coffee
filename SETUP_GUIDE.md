@@ -123,6 +123,22 @@ Once the server is running, open your browser and visit:
 - **Admin Panel**: [http://localhost:8000/admin/](http://localhost:8000/admin/)
   - Login with `admin` / `admin123`
 
+### Start with HTTPS locally
+
+The project includes a custom HTTPS development command. If the development certificate files do not exist, generate them first:
+
+```powershell
+python manage.py generate_dev_cert
+```
+
+Then start the HTTPS server:
+
+```powershell
+python manage.py runserver_ssl
+```
+
+Visit [https://localhost:8000/](https://localhost:8000/) or [https://127.0.0.1:8000/](https://127.0.0.1:8000/). The certificate is self-signed, so a browser warning is expected during local testing. Do not use this development certificate for a public deployment. For full HTTPS and production instructions, see [docs/RUN_PROJECT.md](docs/RUN_PROJECT.md).
+
 ## 📱 Main URL Routes
 
 | Route | Purpose |
@@ -277,6 +293,9 @@ This project is open source and available under the MIT License.
 - [x] Create superuser: Already done (admin/admin123)
 - [x] Start server: `python manage.py runserver`
 - [x] Visit [http://localhost:8000/](http://localhost:8000/)
+- [ ] Optional HTTPS certificate: `python manage.py generate_dev_cert`
+- [ ] Optional HTTPS server: `python manage.py runserver_ssl`
+- [ ] Optional HTTPS URL: [https://localhost:8000/](https://localhost:8000/)
 
 ## 📞 Support
 

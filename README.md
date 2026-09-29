@@ -11,6 +11,22 @@ For the complete Windows-first setup, HTTP/HTTPS, database, production, and trou
 
 Use `/admin/` to add categories and products. Production uses environment variables, WhiteNoise static delivery, secure cookies and HTTPS settings when `DEBUG=False`.
 
+## Start with local HTTPS
+
+For local HTTPS testing, generate the development certificate once if the files in `certs/` do not exist:
+
+```powershell
+python manage.py generate_dev_cert
+```
+
+Start the HTTPS development server:
+
+```powershell
+python manage.py runserver_ssl
+```
+
+Open <https://localhost:8000/> or <https://127.0.0.1:8000/>. Because this is a self-signed development certificate, the browser will display a certificate warning. That warning is expected for local testing; do not use this certificate for a public or production deployment. See [docs/RUN_PROJECT.md](docs/RUN_PROJECT.md) for certificate renewal, custom ports, and production HTTPS configuration.
+
 ## Payment demonstration
 
 Checkout uses a local Khalti-style gateway simulator so the complete online card flow can be demonstrated without contacting a payment network. In production, `SecurityMiddleware` redirects HTTP to HTTPS when `DEBUG=False`, secure cookies prevent session and CSRF cookies from crossing plain HTTP, and `SECURE_PROXY_SSL_HEADER` supports a trusted TLS-terminating reverse proxy.

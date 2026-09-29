@@ -1,0 +1,14 @@
+{% if GOOGLE_ADSENSE_CLIENT_ID %}
+    {# Replace data-ad-slot below with a real slot ID from your AdSense
+       dashboard before going live -- this placeholder is for demo purposes. #}
+    <div class="ad-slot my-4 text-center">
+        <span class="text-muted text-uppercase small d-block mb-1" style="letter-spacing:.05em;">Advertisement</span>
+        <ins class="adsbygoogle"
+             style="display:block"
+             data-ad-client="{{ GOOGLE_ADSENSE_CLIENT_ID }}"
+             data-ad-slot="0000000000"
+             data-ad-format="auto"
+             data-full-width-responsive="true"></ins>
+        <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+    </div>
+{% endif %}

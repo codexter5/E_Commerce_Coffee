@@ -1,5 +1,10 @@
 <div class="col-lg-3 col-md-4 col-sm-6 mb-4">
-    <div class="product-card">
+    <div class="product-card"
+         data-product-id="{{ product.id }}"
+         data-product-name="{{ product.name }}"
+         data-product-category="{{ product.category.name }}"
+         data-product-price="{{ product.current_price }}"
+         data-product-currency="NPR">
         <div class="product-card-image-wrapper">
             <!-- Stock Status Badge Overlay -->
             <div class="product-badge-overlay">

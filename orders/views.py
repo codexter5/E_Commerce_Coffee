@@ -6,6 +6,7 @@ from django.shortcuts import get_object_or_404
 from django.views.decorators.http import require_POST
 from cart.services import get_cart
 from .forms import CardPaymentForm, CheckoutForm, EsewaPaymentForm, KhaltiPaymentForm
+from .analytics import purchase_event_payload
 from .models import Order, OrderItem
 from .payment_gateway import CashOnDeliveryGateway, DummyCardGateway, DummyEsewaGateway, DummyKhaltiGateway
 from .security import transaction_hash, transaction_signature
@@ -108,6 +109,10 @@ def payment(request):
             )
             if order:
                 request.session.pop("checkout_data", None)
+                # Fired here, at the moment the order is actually created, so
+                # the conversion is only ever counted once -- not on
+                # orders:success, which the buyer can revisit repeatedly.
+                request.session["ecommerce_event"] = purchase_event_payload(order)
                 return render(request, "orders/payment.html", {"paid": True, "order": order, "result": result})
             messages.error(request, "Stock changed while you were paying. Please review your cart.")
             return redirect("cart:detail")

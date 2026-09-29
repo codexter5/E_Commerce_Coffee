@@ -5,6 +5,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="description" content="{% block meta_description %}BrewMart — premium specialty coffee beans, artisan brewing equipment, and fresh roasts delivered to your doorstep.{% endblock %}">
+    {% block meta_keywords %}<meta name="keywords" content="specialty coffee, coffee beans online, artisan coffee, buy coffee online Nepal, brewing equipment, coffee shop Kathmandu">{% endblock %}
     <title>{% block title %}BrewMart - Artisan Coffee & Specialty Roasts{% endblock %}</title>
     <link rel="canonical" href="{% block canonical_url %}{{ request.scheme }}://{{ request.get_host }}{{ request.path }}{% endblock %}">
     {% block og_tags %}
@@ -32,7 +33,43 @@
             gtag('config', '{{ GOOGLE_ANALYTICS_ID }}');
         </script>
     {% endif %}
+    {% if FACEBOOK_PIXEL_ID %}
+        <script>
+            !function(f,b,e,v,n,t,s)
+            {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+            n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+            if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+            n.queue=[];t=b.createElement(e);t.async=!0;
+            t.src=v;s=b.getElementsByTagName(e)[0];
+            s.parentNode.insertBefore(t,s)}(window, document,'script',
+            'https://connect.facebook.net/en_US/fbevents.js');
+            fbq('init', '{{ FACEBOOK_PIXEL_ID }}');
+            fbq('track', 'PageView');
+        </script>
+        <noscript><img height="1" width="1" style="display:none" src="https://www.facebook.com/tr?id={{ FACEBOOK_PIXEL_ID }}&ev=PageView&noscript=1"></noscript>
+    {% endif %}
+    {% if GOOGLE_ADSENSE_CLIENT_ID %}
+        <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client={{ GOOGLE_ADSENSE_CLIENT_ID }}" crossorigin="anonymous"></script>
+    {% endif %}
     {% block extra_head %}{% endblock %}
+    <!-- Meta Pixel Code -->
+<script>
+!function(f,b,e,v,n,t,s)
+{if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+n.queue=[];t=b.createElement(e);t.async=!0;
+t.src=v;s=b.getElementsByTagName(e)[0];
+s.parentNode.insertBefore(t,s)}(window, document,'script',
+'https://connect.facebook.net/en_US/fbevents.js');
+fbq('init', '1788754275606424');
+fbq('track', 'PageView');
+</script>
+<noscript><img height="1" width="1" style="display:none"
+src="https://www.facebook.com/tr?id=1788754275606424&ev=PageView&noscript=1"
+/></noscript>
+<!-- End Meta Pixel Code -->
+ 
 </head>
 <body>
     <div class="top-announcement-bar">
@@ -323,5 +360,7 @@
             <i class="bi bi-whatsapp"></i>
         </a>
     {% endif %}
+    {% if ecommerce_event %}{{ ecommerce_event|json_script:"ecommerce-event-data" }}{% endif %}
+    <script src="{% static 'js/analytics.js' %}" defer></script>
 </body>
 </html>

@@ -250,7 +250,22 @@ After pulling schema changes, run `python manage.py migrate`. Avoid editing an a
 - There is no automated test suite visible in the repository tree; run `python manage.py check` and manually exercise checkout, role transitions, wallet transfers, notification polling, and admin flows after changes.
 - Existing docs describe SQLite as development and PostgreSQL as production. The actual settings select PostgreSQL only when `DATABASE_URL` is set; otherwise they use SQLite.
 
-## 16. Handoff Rules For Another AI
+## 16. Marketing, Analytics & Recommendations (added)
+
+- **Google Analytics 4**: `GOOGLE_ANALYTICS_ID` env var; gtag.js loads conditionally in `templates/base.html` via `core.context_processors.site_settings`. Blank by default (no tracking ships until set).
+- **Meta/Facebook Pixel**: `FACEBOOK_PIXEL_ID` env var; standard pixel base code + `PageView` in `templates/base.html`, same on/off pattern as GA.
+- **Google AdSense**: `GOOGLE_ADSENSE_CLIENT_ID` env var; conditional `adsbygoogle.js` script in `<head>`, plus a reusable ad unit at `templates/partials/ad_slot.html` (included on the home page and shop/list page). The `data-ad-slot="0000000000"` in that partial is a placeholder — replace with a real slot ID from the AdSense dashboard before going live.
+- **Event tracking (impressions/clicks/conversions)**: `static/js/analytics.js` is a single site-wide script, loaded in `base.html`.
+  - Impressions/clicks are automatic: any `.product-card[data-product-id]` on a page (i.e. anywhere `templates/products/card.html` is rendered — home, shop, related products, etc.) fires a GA4 `view_item_list` impression on load and a `select_item` event on click. No per-page wiring needed beyond the `data-*` attributes already on the card.
+  - Product detail pages fire `view_item` (GA4) / `ViewContent` (Meta) from `data-*` attributes on the `#product-detail` container in `templates/products/detail.html`.
+  - `add_to_cart` (GA4) / `AddToCart` (Meta) fires from a one-time session-flash JSON payload set in `cart/views.py:add()` and consumed via `core.context_processors.pending_ecommerce_event` + `#ecommerce-event-data` (`json_script`) in `base.html`. Flash-style because the add-to-cart flow is a plain POST-redirect, not AJAX.
+  - `purchase` (GA4) / `Purchase` (Meta) fires the same way, built by `orders/analytics.py:purchase_event_payload()` and queued from `orders/views.py` at the exact moment an order is created (the `paid=True` render) — deliberately not on `orders:success`, which the buyer can revisit repeatedly and would double-count the conversion.
+- **On-page SEO**: meta description, canonical URL, Open Graph/Twitter tags, and schema.org JSON-LD were already present (see `templates/base.html`, `products/services.py:product_json_ld`). Added a `meta_keywords` block to `base.html`, overridden with real page-specific keywords on home, shop/list, categories, and product detail pages. Alt text on all `<img>` tags, `sitemap.xml`, and `robots.txt` were already in place — nothing to add there.
+- **Recommendation engine**: `products/services.py:get_recommended_for_user()` now runs real item-based collaborative filtering via the new `get_collaborative_recommendations()`: for a signed-in user's past purchases, it looks at *other customers'* orders containing those same products, scores candidate products by co-occurrence across that neighborhood, and only falls back to same-category products, then trending best-sellers, when there isn't enough cross-customer overlap to fill the list. Anonymous visitors and accounts with no order history still get trending products. Rendered on the home page under "Trending Now" (`core/views.py`, `templates/core/home.html`) — unchanged wiring, only the underlying algorithm changed. `get_frequently_bought_together()` (already existing, per-product co-purchase counts) is untouched and still powers the product-detail "frequently bought together" rail.
+
+## 17. Handoff Rules For Another AI
+
+
 
 - Preserve existing Django app boundaries and use the existing service/workflow helpers before adding new abstractions.
 - Treat `orders.workflow.TRANSITIONS` and `config/settings.py` as authoritative for state and configuration behavior.

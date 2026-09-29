@@ -99,10 +99,57 @@ def get_trending_products(limit=8, exclude_ids=None):
     return ordered
 
 
+def get_collaborative_recommendations(user, limit=8, exclude_ids=None):
+    """Basic item-based collaborative filtering. For every product this user
+    has bought, find OTHER customers' orders that also contain it, then
+    score every other product in *those* orders by how many of them it
+    co-occurs with. A candidate that shows up alongside several of the
+    user's purchases, across several different customers, scores higher than
+    one that only overlapped once -- the standard "customers who bought what
+    you bought also bought" signal, built from the order-history co-purchase
+    matrix rather than from category membership. Two products end up related
+    here purely because real customers keep buying them together, even if
+    they sit in different categories."""
+    purchased_ids = list(
+        OrderItem.objects.filter(order__user=user).values_list("product_id", flat=True).distinct()
+    )
+    if not purchased_ids:
+        return []
+
+    excluded = set(exclude_ids or []) | set(purchased_ids)
+
+    # Other customers' orders that contain at least one of this user's
+    # purchases -- the "neighborhood" of similar shopping baskets.
+    neighbor_order_ids = (
+        OrderItem.objects.filter(product_id__in=purchased_ids)
+        .exclude(order__user=user)
+        .values_list("order_id", flat=True)
+        .distinct()
+    )
+    scored = (
+        OrderItem.objects.filter(order_id__in=neighbor_order_ids)
+        .exclude(product_id__in=excluded)
+        .values("product_id")
+        .annotate(co_occurrence=Count("order_id", distinct=True))
+        .order_by("-co_occurrence")[:limit]
+    )
+    product_ids = [row["product_id"] for row in scored]
+    if not product_ids:
+        return []
+    products = Product.objects.active().filter(pk__in=product_ids).select_related("category")
+    by_id = {p.pk: p for p in products}
+    return [by_id[pid] for pid in product_ids if pid in by_id]
+
+
 def get_recommended_for_user(user, limit=8):
-    """Personalized picks: products in categories the user has bought from
-    before, excluding things they already own. Falls back to trending
-    products for anonymous visitors or accounts with no order history yet."""
+    """Personalized picks for the signed-in user, in priority order:
+    1. Item-based collaborative filtering (what similar customers' orders
+       also contained -- see get_collaborative_recommendations).
+    2. Same-category products not already covered, for when there's too
+       little cross-customer overlap to fill the list.
+    3. Trending best-sellers, as a last resort.
+    Falls back straight to trending for anonymous visitors or accounts with
+    no order history yet (there's nothing to base a personalized list on)."""
     if not getattr(user, "is_authenticated", False):
         return get_trending_products(limit=limit)
 
@@ -112,18 +159,25 @@ def get_recommended_for_user(user, limit=8):
     if not purchased_product_ids:
         return get_trending_products(limit=limit)
 
-    category_ids = (
-        Product.objects.filter(pk__in=purchased_product_ids).values_list("category_id", flat=True).distinct()
-    )
-    recommended = list(
-        Product.objects.active()
-        .filter(category_id__in=category_ids)
-        .exclude(pk__in=purchased_product_ids)
-        .select_related("category")
-        .order_by("-featured", "-created_at")[:limit]
-    )
+    recommended = get_collaborative_recommendations(user, limit=limit)
+    seen_ids = set(purchased_product_ids) | {p.pk for p in recommended}
+
     if len(recommended) < limit:
-        seen_ids = set(purchased_product_ids) | {p.pk for p in recommended}
+        category_ids = (
+            Product.objects.filter(pk__in=purchased_product_ids).values_list("category_id", flat=True).distinct()
+        )
+        category_fill = list(
+            Product.objects.active()
+            .filter(category_id__in=category_ids)
+            .exclude(pk__in=seen_ids)
+            .select_related("category")
+            .order_by("-featured", "-created_at")[: limit - len(recommended)]
+        )
+        recommended.extend(category_fill)
+        seen_ids |= {p.pk for p in category_fill}
+
+    if len(recommended) < limit:
         filler = get_trending_products(limit=limit - len(recommended), exclude_ids=list(seen_ids))
         recommended.extend(filler)
+
     return recommended

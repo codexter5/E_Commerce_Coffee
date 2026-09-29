@@ -12,7 +12,25 @@ def add(request, product_id):
     product = get_object_or_404(Product.objects.active(), pk=product_id)
     item, created = CartItem.objects.get_or_create(cart=get_cart(request), product=product)
     item.quantity = min(item.quantity + (0 if created else 1), product.stock_quantity); item.save()
-    messages.success(request, f"{product.name} added to cart."); return redirect(request.POST.get("next") or "cart:detail")
+    messages.success(request, f"{product.name} added to cart.")
+    # Flash-style event for the next page render (see
+    # core.context_processors.pending_ecommerce_event) since this is a plain
+    # redirect, not an AJAX call -- there's no single JS moment where "the
+    # add-to-cart click just happened" otherwise.
+    request.session["ecommerce_event"] = {
+        "event": "add_to_cart",
+        "fb_event": "AddToCart",
+        "currency": "NPR",
+        "value": float(product.current_price),
+        "items": [{
+            "item_id": product.sku,
+            "item_name": product.name,
+            "item_category": product.category.name,
+            "price": float(product.current_price),
+            "quantity": 1,
+        }],
+    }
+    return redirect(request.POST.get("next") or "cart:detail")
 @require_POST
 def update(request, item_id):
     item = get_object_or_404(CartItem, pk=item_id, cart=get_cart(request)); qty = int(request.POST.get("quantity", 1))

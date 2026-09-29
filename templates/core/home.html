@@ -1,5 +1,7 @@
 {% extends 'base.html' %}
 
+{% block meta_keywords %}<meta name="keywords" content="specialty coffee Nepal, coffee beans online, artisan coffee shop, buy coffee online Kathmandu, brewing equipment, fresh roasted coffee">{% endblock %}
+
 {% block structured_data %}
     <script type="application/ld+json">
     {
@@ -175,6 +177,8 @@
             {% endfor %}
         </div>
     </section>
+
+    {% include 'partials/ad_slot.html' %}
 
     <!-- Trending Now -->
     {% if trending_products %}

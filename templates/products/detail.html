@@ -3,6 +3,7 @@
 
 {% block title %}{{ product.name }} - BrewMart{% endblock %}
 {% block meta_description %}{{ product.description|truncatewords:30 }}{% endblock %}
+{% block meta_keywords %}<meta name="keywords" content="{{ product.name }}, {{ product.category.name }}{% if product.brand %}, {{ product.brand }}{% endif %}, buy coffee online, specialty coffee Nepal">{% endblock %}
 {% block og_title %}{{ product.name }} - BrewMart{% endblock %}
 {% block og_description %}{{ product.description|truncatewords:30 }}{% endblock %}
 {% block og_image %}
@@ -25,7 +26,13 @@
         </ol>
     </nav>
 
-    <div class="row g-5 mb-5 align-items-start">
+    <div class="row g-5 mb-5 align-items-start"
+         id="product-detail"
+         data-product-id="{{ product.id }}"
+         data-product-name="{{ product.name }}"
+         data-product-category="{{ product.category.name }}"
+         data-product-price="{{ product.current_price }}"
+         data-product-currency="NPR">
         <!-- Gallery Column -->
         <div class="col-lg-5">
             <div class="product-gallery-frame">
